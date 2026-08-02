@@ -1,21 +1,17 @@
 import { apiFetch } from "@/lib/api-client";
-import { getAccessToken } from "@/lib/auth/session";
+import { authHeaders } from "@/lib/api/auth";
 import {
   ApproveCollectorFormValues,
   RejectCollectorFormValues,
 } from "@/lib/schemas/auth.schema";
 import { CollectorSummary } from "@/lib/types/collectors";
 
-function authHeaders() {
-  const token = getAccessToken();
-  if (!token) {
-    throw new Error("No hay sesión activa");
-  }
-  return { token };
-}
-
 export async function fetchPendingCollectors(): Promise<CollectorSummary[]> {
   return apiFetch<CollectorSummary[]>("/collectors?status=pending", authHeaders());
+}
+
+export async function fetchActiveCollectors(): Promise<CollectorSummary[]> {
+  return apiFetch<CollectorSummary[]>("/collectors?status=active", authHeaders());
 }
 
 export async function approveCollector(
