@@ -17,6 +17,7 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { ReceiptsModule } from "./modules/receipts/receipts.module";
 import { RulesModule } from "./modules/rules/rules.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
+import { SyncModule } from "./modules/sync/sync.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -43,6 +44,7 @@ import { CollectorActiveGuard } from "./common/guards/collector-active.guard";
     ReceiptsModule,
     RulesModule,
     NotificationsModule,
+    SyncModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

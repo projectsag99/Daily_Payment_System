@@ -37,6 +37,29 @@ export class StorageService {
     return `documents/${clientId}/${uuidv4()}.${ext}`;
   }
 
+  buildReceiptStorageKey(receiptId: string): string {
+    return `receipts/${receiptId}.pdf`;
+  }
+
+  isPendingReceiptKey(storageKey: string): boolean {
+    return storageKey.startsWith("pending/");
+  }
+
+  async putObject(
+    storageKey: string,
+    body: Buffer,
+    contentType: string,
+  ): Promise<void> {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: storageKey,
+        Body: body,
+        ContentType: contentType,
+      }),
+    );
+  }
+
   async getUploadUrl(
     storageKey: string,
     mimeType: string,
