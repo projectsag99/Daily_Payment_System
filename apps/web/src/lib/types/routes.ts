@@ -26,6 +26,14 @@ export interface RouteClient {
   location: GeoPoint | null;
 }
 
+export interface CollectorRoute extends RouteSummary {
+  clients: RouteClient[];
+}
+
+export interface MyRoutesResponse {
+  routes: CollectorRoute[];
+}
+
 export interface RouteCollectorAssignment {
   id: string;
   collectorId: string;

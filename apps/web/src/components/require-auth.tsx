@@ -16,14 +16,18 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-600">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
         Cargando sesión…
       </div>
     );
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
+        Redirigiendo al login…
+      </div>
+    );
   }
 
   return <>{children}</>;

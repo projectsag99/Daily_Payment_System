@@ -9,14 +9,15 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api-client";
+import { apiFetch, ApiError } from "@/lib/api-client";
 import {
   AuthUser,
   LoginResponse,
+  canUseWebPanel,
   clearTokens,
   getAccessToken,
+  getHomePath,
   getRefreshToken,
-  isAdmin,
   setTokens,
 } from "@/lib/auth/session";
 import { LoginFormValues } from "@/lib/schemas/auth.schema";
@@ -34,7 +35,10 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return Boolean(getAccessToken());
+  });
 
   const loadUser = useCallback(async () => {
     const token = getAccessToken();
@@ -44,9 +48,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    setIsLoading(true);
     try {
-      const me = await apiFetch<AuthUser>("/auth/me", { token });
-      if (!isAdmin(me)) {
+      const me = await Promise.race([
+        apiFetch<AuthUser>("/auth/me", { token }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("timeout")), 10_000),
+        ),
+      ]);
+      if (!canUseWebPanel(me)) {
         clearTokens();
         setUser(null);
       } else {
@@ -71,13 +81,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(values),
       });
 
-      if (!isAdmin(response.user)) {
-        throw new Error("Solo administradores pueden acceder al panel web");
+      if (!canUseWebPanel(response.user)) {
+        throw new Error("Tipo de cuenta no permitido en el panel web");
       }
 
       setTokens(response.accessToken, response.refreshToken);
       setUser(response.user);
-      router.replace("/collectors");
+      setIsLoading(false);
+      router.replace(getHomePath(response.user));
     },
     [router],
   );

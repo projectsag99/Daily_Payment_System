@@ -18,7 +18,9 @@
     "migration:run": "pnpm --filter @dps/api migration:run",
     "migration:revert": "pnpm --filter @dps/api migration:revert",
     "migration:show": "pnpm --filter @dps/api migration:show",
-    "bootstrap:admin": "pnpm --filter @dps/api bootstrap:admin"
+    "bootstrap:admin": "pnpm --filter @dps/api bootstrap:admin",
+    "web:dev": "pnpm --filter @dps/web dev:clean",
+    "web:build": "pnpm --filter @dps/web build"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

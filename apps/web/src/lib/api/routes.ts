@@ -7,6 +7,8 @@ import {
   UpdateRouteFormValues,
 } from "@/lib/schemas/auth.schema";
 import {
+  CollectorRoute,
+  MyRoutesResponse,
   RouteClient,
   RouteCollectorAssignment,
   RouteSummary,
@@ -31,6 +33,15 @@ export async function fetchRoutes(
   params: ListRoutesParams = {},
 ): Promise<RouteSummary[]> {
   return apiFetch<RouteSummary[]>(`/routes${toQuery(params)}`, authHeaders());
+}
+
+export async function fetchMyRoutes(date?: string): Promise<CollectorRoute[]> {
+  const query = date ? `?date=${encodeURIComponent(date)}` : "";
+  const response = await apiFetch<MyRoutesResponse>(
+    `/routes/my${query}`,
+    authHeaders(),
+  );
+  return response.routes;
 }
 
 export async function createRoute(

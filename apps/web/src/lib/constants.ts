@@ -51,6 +51,42 @@ export const NOTIFY_CHANNEL_LABELS: Record<NotifyChannel, string> = {
   email: "Email",
 };
 
+export const PAYMENT_METHODS = ["cash", "transfer", "other"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const VISIT_STATUSES = [
+  "pending",
+  "visited",
+  "paid",
+  "skipped",
+  "not_home",
+] as const;
+export type VisitStatus = (typeof VISIT_STATUSES)[number];
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: "Efectivo",
+  transfer: "Transferencia",
+  other: "Otro",
+};
+
+export const PAYMENT_STATUSES = ["completed", "reversed", "pending", "failed"] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
+  completed: "Completado",
+  reversed: "Reversado",
+  pending: "Pendiente",
+  failed: "Fallido",
+};
+
+export const VISIT_STATUS_LABELS: Record<VisitStatus, string> = {
+  pending: "Pendiente",
+  visited: "Visitado",
+  paid: "Pagado",
+  skipped: "Omitido",
+  not_home: "No estaba",
+};
+
 export const DAY_LABELS = [
   "Domingo",
   "Lunes",

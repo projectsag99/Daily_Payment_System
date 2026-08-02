@@ -16,9 +16,21 @@ export class ApiError extends Error {
 }
 
 function getApiBaseUrl(): string {
-  const raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+  const fallback = "http://localhost:3001";
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? fallback).trim();
+  if (!raw || raw === "/") {
+    return `${fallback}/v1`;
+  }
+
   const base = raw.replace(/\/+$/, "");
-  return base.endsWith("/v1") ? base : `${base}/v1`;
+  const withVersion = base.endsWith("/v1") ? base : `${base}/v1`;
+
+  // Must be absolute — relative URLs hit the Next.js dev server (port 3000).
+  if (!/^https?:\/\//i.test(withVersion)) {
+    return `${fallback}/v1`;
+  }
+
+  return withVersion;
 }
 
 export async function apiFetch<T>(

@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/lib/auth/auth-context";
+import { getHomePath } from "@/lib/auth/session";
 import { ApiError } from "@/lib/api-client";
 import { LoginFormValues, loginSchema } from "@/lib/schemas/auth.schema";
 
 export default function LoginPage() {
-  const { login, isAuthenticated, isLoading } = useAuth();
+  const { login, user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
 
   const {
@@ -23,9 +24,9 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.replace("/collectors");
+      router.replace(getHomePath(user));
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   async function onSubmit(values: LoginFormValues) {
     try {
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-slate-600">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
         Cargando…
       </div>
     );
@@ -56,10 +57,19 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold text-slate-900">
             Daily Payment
           </h1>
-          <p className="mt-2 text-sm text-slate-600">Panel de administración</p>
+          <p className="mt-2 text-sm text-slate-600">
+            Administradores y cobradores
+          </p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSubmit(onSubmit)(e);
+          }}
+          className="space-y-5"
+          method="post"
+        >
           <div>
             <label
               htmlFor="email"

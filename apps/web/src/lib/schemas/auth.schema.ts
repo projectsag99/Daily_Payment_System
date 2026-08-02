@@ -148,3 +148,23 @@ export function buildRuleConfig(values: {
     scope: "assigned_collector",
   };
 }
+
+export const reversePaymentSchema = z.object({
+  reason: z.string().min(3, "Indica el motivo de la reversión").max(1000),
+});
+
+export type ReversePaymentFormValues = z.infer<typeof reversePaymentSchema>;
+
+export const suspendCollectorSchema = z.object({
+  reason: z.string().min(3, "Indica el motivo de la suspensión").max(1000),
+});
+
+export type SuspendCollectorFormValues = z.infer<typeof suspendCollectorSchema>;
+
+export const deactivateCollectorSchema = z.object({
+  reason: z.string().max(1000).optional(),
+});
+
+export type DeactivateCollectorFormValues = z.infer<
+  typeof deactivateCollectorSchema
+>;

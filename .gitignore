@@ -49,3 +49,4 @@ apps/mobile/**/generated_plugin_registrant.dart
 
 # NestJS
 apps/api/dist/
+*.tsbuildinfo

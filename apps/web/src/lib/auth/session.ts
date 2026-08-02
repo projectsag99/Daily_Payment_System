@@ -41,3 +41,36 @@ export function clearTokens(): void {
 export function isAdmin(user: AuthUser | null): boolean {
   return user?.role === "admin";
 }
+
+export function isCollector(user: AuthUser | null): boolean {
+  return user?.role === "collector";
+}
+
+export function canUseWebPanel(user: AuthUser | null): boolean {
+  return isAdmin(user) || isCollector(user);
+}
+
+export function getHomePath(user: AuthUser | null): string {
+  if (!user) return "/login";
+  if (isAdmin(user)) return "/dashboard";
+  if (user.collectorStatus === "pending") return "/pending-approval";
+  if (user.collectorStatus === "suspended") return "/account-suspended";
+  return "/my-routes";
+}
+
+const ADMIN_ROUTE_PREFIXES = [
+  "/dashboard",
+  "/collectors",
+  "/clients",
+  "/routes",
+  "/rules",
+  "/credits",
+  "/pagos",
+  "/auditoria",
+];
+
+export function isAdminRoute(pathname: string): boolean {
+  return ADMIN_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}

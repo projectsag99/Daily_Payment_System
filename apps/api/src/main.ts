@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { NestFactory } from "@nestjs/core";
-import { ValidationPipe, VersioningType } from "@nestjs/common";
+import { ValidationPipe } from "@nestjs/common";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
@@ -11,8 +11,8 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
   app.use(helmet());
+  // Single /v1 prefix — do not combine with URI versioning (would produce /v1/v1/...).
   app.setGlobalPrefix("v1");
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
 
   app.useGlobalPipes(
     new ValidationPipe({
