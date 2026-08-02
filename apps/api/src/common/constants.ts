@@ -51,6 +51,33 @@ export enum VisitStatus {
   NOT_HOME = "not_home",
 }
 
+export enum CreditStatus {
+  ACTIVE = "active",
+  CLOSED = "closed",
+  DEFAULTED = "defaulted",
+  WRITTEN_OFF = "written_off",
+}
+
+export enum InstallmentStatus {
+  PENDING = "pending",
+  PARTIAL = "partial",
+  PAID = "paid",
+  OVERDUE = "overdue",
+  WAIVED = "waived",
+}
+
+export enum PaymentStatus {
+  COMPLETED = "completed",
+  REVERSED = "reversed",
+  ADJUSTMENT = "adjustment",
+}
+
+export enum PaymentMethod {
+  CASH = "cash",
+  TRANSFER = "transfer",
+  OTHER = "other",
+}
+
 export enum ApiErrorCode {
   AUTH_INVALID_CREDENTIALS = "AUTH_INVALID_CREDENTIALS",
   ACCOUNT_NOT_APPROVED = "ACCOUNT_NOT_APPROVED",
@@ -69,4 +96,8 @@ export enum ApiErrorCode {
   STORAGE_KEY_MISMATCH = "STORAGE_KEY_MISMATCH",
   ROUTE_NOT_FOUND = "ROUTE_NOT_FOUND",
   ROUTE_ACCESS_DENIED = "ROUTE_ACCESS_DENIED",
+  CREDIT_NOT_FOUND = "CREDIT_NOT_FOUND",
+  PAYMENT_NOT_FOUND = "PAYMENT_NOT_FOUND",
+  PAYMENT_IDEMPOTENCY_CONFLICT = "PAYMENT_IDEMPOTENCY_CONFLICT",
+  PAYMENT_INVALID_AMOUNT = "PAYMENT_INVALID_AMOUNT",
 }
