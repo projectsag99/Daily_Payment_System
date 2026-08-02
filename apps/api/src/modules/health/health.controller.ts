@@ -1,14 +1,16 @@
-import { Controller, Get } from "@nestjs/common";
+import { Controller, Get, HttpStatus, Res } from "@nestjs/common";
 import { ApiTags, ApiOperation } from "@nestjs/swagger";
-import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
+import { SkipThrottle } from "@nestjs/throttler";
+import { Response } from "express";
 import { Public } from "../../common/decorators/auth.decorators";
+import { HealthService } from "./health.service";
 
 @ApiTags("health")
 @Controller("health")
 @Public()
+@SkipThrottle()
 export class HealthController {
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(private readonly healthService: HealthService) {}
 
   @Get()
   @ApiOperation({ summary: "Liveness check" })
@@ -17,21 +19,14 @@ export class HealthController {
   }
 
   @Get("ready")
-  @ApiOperation({ summary: "Readiness check (DB)" })
-  async readiness() {
-    try {
-      await this.dataSource.query("SELECT 1");
-      return {
-        status: "ok",
-        checks: { database: "up" },
-        timestamp: new Date().toISOString(),
-      };
-    } catch {
-      return {
-        status: "error",
-        checks: { database: "down" },
-        timestamp: new Date().toISOString(),
-      };
+  @ApiOperation({ summary: "Readiness check (DB, Redis, storage)" })
+  async readiness(@Res({ passthrough: true }) res: Response) {
+    const result = await this.healthService.readiness();
+    if (result.status === "error") {
+      res.status(HttpStatus.SERVICE_UNAVAILABLE);
+    } else if (result.status === "degraded") {
+      res.status(HttpStatus.OK);
     }
+    return result;
   }
 }

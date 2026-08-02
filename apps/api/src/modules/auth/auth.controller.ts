@@ -8,6 +8,7 @@ import {
   HttpStatus,
 } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation } from "@nestjs/swagger";
+import { SkipThrottle, Throttle } from "@nestjs/throttler";
 import { Request } from "express";
 import { AuthService } from "./auth.service";
 import {
@@ -24,11 +25,13 @@ import { JwtPayload } from "./interfaces/jwt-payload.interface";
 @ApiTags("auth")
 @Controller("auth")
 @SkipCollectorActiveCheck()
+@SkipThrottle()
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
   @Post("register")
+  @Throttle({ default: { limit: 3, ttl: 3_600_000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Collector self-registration" })
   async register(@Body() dto: RegisterDto, @Req() req: Request) {
@@ -37,6 +40,7 @@ export class AuthController {
 
   @Public()
   @Post("login")
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Login" })
   async login(@Body() dto: LoginDto, @Req() req: Request) {

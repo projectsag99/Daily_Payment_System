@@ -11,6 +11,7 @@ import {
   Headers,
 } from "@nestjs/common";
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiHeader } from "@nestjs/swagger";
+import { Throttle } from "@nestjs/throttler";
 import { Request, Response } from "express";
 import { PaymentsService } from "./payments.service";
 import {
@@ -36,6 +37,7 @@ export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
   @Post()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @RequirePermissions("payments:create")
   @ApiOperation({ summary: "Register payment (requires Idempotency-Key)" })
   @ApiHeader({ name: "Idempotency-Key", required: true })
