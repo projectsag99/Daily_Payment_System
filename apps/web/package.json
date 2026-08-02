@@ -3,10 +3,30 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "node -e \"console.log('Next.js Admin — bootstrap only (Phase M0). Implement in later phases.')\"",
-    "build": "node -e \"console.log('Next.js Admin — bootstrap only (Phase M0).')\"",
-    "lint": "node -e \"console.log('skip')\"",
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint",
     "test": "node -e \"console.log('skip')\"",
-    "typecheck": "node -e \"console.log('skip')\""
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@dps/shared": "workspace:*",
+    "@hookform/resolvers": "^3.10.0",
+    "@tanstack/react-query": "^5.90.12",
+    "next": "^14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.68.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18",
+    "typescript": "^5.9.3"
   }
 }
