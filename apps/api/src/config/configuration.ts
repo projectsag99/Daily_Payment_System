@@ -23,4 +23,12 @@ export default () => ({
     uploadUrlTtlSeconds: Number(process.env.S3_UPLOAD_URL_TTL_SECONDS ?? 300),
     downloadUrlTtlSeconds: Number(process.env.S3_DOWNLOAD_URL_TTL_SECONDS ?? 60),
   },
+  receiptLinkTtlDays: Number(process.env.RECEIPT_LINK_TTL_DAYS ?? 90),
+  webPublicBaseUrl: process.env.WEB_PUBLIC_URL ?? "http://localhost:3000",
+  redis: {
+    url: process.env.REDIS_URL ?? "redis://localhost:6379",
+  },
+  fcm: {
+    serverKey: process.env.FCM_SERVER_KEY,
+  },
 });

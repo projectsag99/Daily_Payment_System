@@ -7,11 +7,13 @@ import { PaymentsRepository } from "./repositories/payments.repository";
 import { PaymentsService } from "./payments.service";
 import { PaymentsController } from "./payments.controller";
 import { ClientsModule } from "../clients/clients.module";
+import { RulesModule } from "../rules/rules.module";
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Payment, PaymentAllocation, IdempotencyKeyRecord]),
     ClientsModule,
+    RulesModule,
   ],
   controllers: [PaymentsController],
   providers: [PaymentsRepository, PaymentsService],

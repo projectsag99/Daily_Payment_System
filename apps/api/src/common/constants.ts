@@ -23,6 +23,10 @@ export enum AuditAction {
   SUSPEND = "SUSPEND",
   REACTIVATE = "REACTIVATE",
   DEACTIVATE = "DEACTIVATE",
+  PAYMENT_RECORD = "PAYMENT_RECORD",
+  RECEIPT_GENERATE = "RECEIPT_GENERATE",
+  RECEIPT_LINK_REVOKE = "RECEIPT_LINK_REVOKE",
+  RULE_TRIGGER = "RULE_TRIGGER",
 }
 
 export enum ClientStatus {
@@ -78,6 +82,28 @@ export enum PaymentMethod {
   OTHER = "other",
 }
 
+export enum RuleType {
+  OVERDUE_INSTALLMENTS_THRESHOLD = "overdue_installments_threshold",
+  ACCUMULATED_UNPAID_QUOTA_THRESHOLD = "accumulated_unpaid_quota_threshold",
+}
+
+export enum NotificationChannel {
+  IN_APP = "in_app",
+  PUSH = "push",
+  EMAIL = "email",
+}
+
+export enum NotificationStatus {
+  PENDING = "pending",
+  SENT = "sent",
+  FAILED = "failed",
+  READ = "read",
+}
+
+export enum RuleScope {
+  ASSIGNED_COLLECTOR = "assigned_collector",
+}
+
 export enum ApiErrorCode {
   AUTH_INVALID_CREDENTIALS = "AUTH_INVALID_CREDENTIALS",
   ACCOUNT_NOT_APPROVED = "ACCOUNT_NOT_APPROVED",
@@ -100,4 +126,11 @@ export enum ApiErrorCode {
   PAYMENT_NOT_FOUND = "PAYMENT_NOT_FOUND",
   PAYMENT_IDEMPOTENCY_CONFLICT = "PAYMENT_IDEMPOTENCY_CONFLICT",
   PAYMENT_INVALID_AMOUNT = "PAYMENT_INVALID_AMOUNT",
+  RECEIPT_NOT_FOUND = "RECEIPT_NOT_FOUND",
+  RECEIPT_LINK_NOT_FOUND = "RECEIPT_LINK_NOT_FOUND",
+  RECEIPT_LINK_EXPIRED = "RECEIPT_LINK_EXPIRED",
+  RECEIPT_LINK_REVOKED = "RECEIPT_LINK_REVOKED",
+  RECEIPT_NOT_READY = "RECEIPT_NOT_READY",
+  RULE_NOT_FOUND = "RULE_NOT_FOUND",
+  NOTIFICATION_NOT_FOUND = "NOTIFICATION_NOT_FOUND",
 }

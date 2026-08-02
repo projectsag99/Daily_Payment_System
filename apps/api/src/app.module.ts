@@ -14,6 +14,9 @@ import { StorageModule } from "./modules/storage/storage.module";
 import { RoutesModule } from "./modules/routes/routes.module";
 import { CreditsModule } from "./modules/credits/credits.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
+import { ReceiptsModule } from "./modules/receipts/receipts.module";
+import { RulesModule } from "./modules/rules/rules.module";
+import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -37,6 +40,9 @@ import { CollectorActiveGuard } from "./common/guards/collector-active.guard";
     RoutesModule,
     CreditsModule,
     PaymentsModule,
+    ReceiptsModule,
+    RulesModule,
+    NotificationsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

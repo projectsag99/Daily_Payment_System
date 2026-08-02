@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { PaymentsRepository } from "./repositories/payments.repository";
 import { ClientsRepository } from "../clients/repositories/clients.repository";
+import { RulesService } from "../rules/rules.service";
 import {
   ApiErrorCode,
   UserRoleCode,
@@ -25,6 +26,7 @@ export class PaymentsService {
   constructor(
     private readonly paymentsRepository: PaymentsRepository,
     private readonly clientsRepository: ClientsRepository,
+    private readonly rulesService: RulesService,
   ) {}
 
   async create(
@@ -109,6 +111,10 @@ export class PaymentsService {
         location: dto.location,
         installmentIds: dto.installmentIds,
       });
+
+      void this.rulesService
+        .evaluateActiveRulesForClient(dto.clientId)
+        .catch(() => undefined);
 
       return {
         body: {
