@@ -1,0 +1,12 @@
+{
+  "name": "@dps/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node -e \"console.log('Next.js Admin — bootstrap only (Phase M0). Implement in later phases.')\"",
+    "build": "node -e \"console.log('Next.js Admin — bootstrap only (Phase M0).')\"",
+    "lint": "node -e \"console.log('skip')\"",
+    "test": "node -e \"console.log('skip')\"",
+    "typecheck": "node -e \"console.log('skip')\""
+  }
+}

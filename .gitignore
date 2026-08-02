@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.next/
+out/
+build/
+.turbo/
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Firebase / credentials (keep examples only)
+*-firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Testing
+coverage/
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/.packages
+apps/mobile/build/
+apps/mobile/.pub-cache/
+apps/mobile/.pub/
+apps/mobile/**/generated_plugin_registrant.dart
+
+# NestJS
+apps/api/dist/

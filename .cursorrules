@@ -1,0 +1,55 @@
+# Reglas del proyecto — Daily Payment Collection System
+
+## Idioma
+- Comentarios de código: inglés
+- Mensajes de error visibles al usuario: español (Colombia)
+- Variables, funciones, clases: inglés
+
+## TypeScript / NestJS
+- `strict: true` siempre
+- No usar `any` — usar narrowing
+- DTOs siempre con class-validator decorators
+- Servicios solo llaman a Repositories, nunca a TypeORM directamente
+- Guards y Pipes para toda validación de entrada
+- Toda respuesta de API sigue: `{ data, meta?, error? }`
+
+## Pagos (CRÍTICO)
+- `createPayment()` SIEMPRE en una sola transacción DB
+- NUNCA hacer SELECT sin `FOR UPDATE` en installments durante un pago
+- NUNCA DELETE en payments — solo status `reversed`
+- `idempotency_key` se verifica ANTES de cualquier operación de negocio
+
+## Base de datos
+- NUNCA editar migraciones ya aplicadas — crear nueva migración
+- Soft delete en clients, routes, documents (`deleted_at` timestamp)
+- `audit_logs`: solo INSERT, nunca UPDATE ni DELETE
+
+## Next.js
+- App Router únicamente — no usar Pages Router
+- Server Components por defecto — Client Components solo cuando sea necesario
+- TanStack Query para todo server state
+- Zod para validación de formularios
+- No hardcodear URLs de API — usar variables de entorno
+
+## Flutter
+- Riverpod para todo state management — no usar setState excepto en widgets locales
+- Toda llamada a API pasa por DioClient con interceptors
+- Offline: siempre revisar ConnectivityService antes de llamar a la API
+- `idempotency_key` generado con uuid y persistido en Drift ANTES de llamar a API
+
+## Generación de código
+- Generar UN módulo/feature completo a la vez
+- Incluir unit tests para toda lógica de dominio pura
+- Incluir integration tests para endpoints críticos (auth, payments)
+- NO generar documentación en archivos `.md` adicionales — ya existe en `docs/`
+
+## Decisiones de dominio (aprobadas)
+- Timezone: `America/Bogota` (UTC-5) para límites de "hoy" en rutas
+- Cobradores pueden actualizar ubicación de clientes asignados en v1
+- TTL máximo de links de recibo: 90 días
+- Cifrado de cédula a nivel de aplicación: diferir a Fase 9 (hardening)
+
+## Orden de trabajo (optimización de créditos)
+1. Fase M0: docker-compose.yml + monorepo pnpm + turbo.json
+2. Fase M1: migraciones DB según `docs/DATABASE_SCHEMA.md`
+3. Una fase a la vez — no adelantar fases
