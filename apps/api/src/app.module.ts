@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
+import { join } from "path";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import configuration from "./config/configuration";
@@ -19,6 +20,11 @@ import { ReceiptsModule } from "./modules/receipts/receipts.module";
 import { RulesModule } from "./modules/rules/rules.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { SyncModule } from "./modules/sync/sync.module";
+import { CashBoxModule } from "./modules/cash-box/cash-box.module";
+import { BusinessCalendarModule } from "./modules/business-calendar/business-calendar.module";
+import { MetricsModule } from "./modules/metrics/metrics.module";
+import { LoggingInterceptor } from "./common/interceptors/logging.interceptor";
+import { MetricsInterceptor } from "./common/interceptors/metrics.interceptor";
 import { JwtAuthGuard } from "./common/guards/jwt-auth.guard";
 import { RolesGuard } from "./common/guards/roles.guard";
 import { PermissionsGuard } from "./common/guards/permissions.guard";
@@ -28,6 +34,11 @@ import { CollectorActiveGuard } from "./common/guards/collector-active.guard";
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: [
+        join(__dirname, "../../../.env"),
+        join(__dirname, "../../.env"),
+        ".env",
+      ],
       load: [configuration],
     }),
     ThrottlerModule.forRoot([
@@ -52,8 +63,13 @@ import { CollectorActiveGuard } from "./common/guards/collector-active.guard";
     RulesModule,
     NotificationsModule,
     SyncModule,
+    CashBoxModule,
+    BusinessCalendarModule,
+    MetricsModule,
   ],
   providers: [
+    LoggingInterceptor,
+    MetricsInterceptor,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
