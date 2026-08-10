@@ -88,10 +88,10 @@ export type CreateClientWithCreditFormValues = z.infer<
 
 export const CREATE_CLIENT_CREDIT_DEFAULTS = {
   creditInterestPercent: 20,
-  creditInstallments: 20,
+  creditInstallments: 24,
 } as const;
 
-export const CREATE_CLIENT_INSTALLMENT_PRESETS = [20, 30] as const;
+export const CREATE_CLIENT_INSTALLMENT_PRESETS = [24, 30] as const;
 
 export type CreateClientPayload = Omit<
   CreateClientFormValues,
