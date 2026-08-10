@@ -11,6 +11,7 @@ const adminLinks = [
   { href: "/clients", label: "Clientes" },
   { href: "/routes", label: "Rutas" },
   { href: "/pagos", label: "Pagos" },
+  { href: "/caja", label: "Caja" },
   { href: "/rules", label: "Reglas" },
   { href: "/auditoria", label: "Auditoría" },
 ];
@@ -33,7 +34,7 @@ export function NavLinks() {
   if (links.length === 0) return null;
 
   return (
-    <nav className="flex flex-wrap gap-4 text-sm">
+    <nav className="flex flex-wrap gap-1 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-1">
       {links.map((link) => {
         const active =
           pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -43,8 +44,8 @@ export function NavLinks() {
             href={link.href}
             className={
               active
-                ? "font-medium text-blue-600"
-                : "text-slate-600 hover:text-slate-900"
+                ? "rounded-xl bg-white px-3 py-1.5 text-sm font-semibold text-brand-700 shadow-sm ring-1 ring-slate-200/80"
+                : "rounded-xl px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-white/60 hover:text-slate-900"
             }
           >
             {link.label}

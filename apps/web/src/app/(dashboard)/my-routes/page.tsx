@@ -152,7 +152,7 @@ export default function MyRoutesPage() {
                           <button
                             type="button"
                             onClick={() => setSelectedClient(client)}
-                            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700"
+                            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
                           >
                             Registrar pago
                           </button>
@@ -224,7 +224,7 @@ export default function MyRoutesPage() {
                     type="button"
                     disabled={linkMutation.isPending}
                     onClick={() => linkMutation.mutate(lastPayment.receipt.id)}
-                    className="mt-2 text-sm font-medium text-blue-600 hover:underline"
+                    className="mt-2 text-sm font-medium text-brand-600 hover:underline"
                   >
                     {linkMutation.isPending
                       ? "Generando enlace…"
@@ -262,7 +262,7 @@ export default function MyRoutesPage() {
                 setLastPayment(null);
                 setShareUrl(null);
               }}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
             >
               Cerrar
             </button>

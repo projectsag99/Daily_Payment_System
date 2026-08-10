@@ -132,7 +132,7 @@ export default function PagosPage() {
         </div>
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"
         >
           Filtrar
         </button>
@@ -179,7 +179,7 @@ export default function PagosPage() {
                   <td className="px-4 py-3">
                     <Link
                       href={`/clients/${payment.clientId}`}
-                      className="text-blue-600 hover:underline"
+                      className="text-brand-600 hover:underline"
                     >
                       Ver cliente
                     </Link>
@@ -188,7 +188,7 @@ export default function PagosPage() {
                     <button
                       type="button"
                       onClick={() => setSelected(payment)}
-                      className="text-blue-600 hover:underline"
+                      className="text-brand-600 hover:underline"
                     >
                       Detalle
                     </button>

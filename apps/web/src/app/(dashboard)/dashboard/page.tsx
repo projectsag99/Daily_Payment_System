@@ -9,6 +9,7 @@ import { fetchCollectors } from "@/lib/api/collectors";
 import { fetchPayments } from "@/lib/api/payments";
 import { fetchRoutes } from "@/lib/api/routes";
 import { formatDateTime, formatMoney } from "@/lib/utils/format";
+import { linkClass, pageSubtitle, pageTitle } from "@/lib/ui-classes";
 
 function startOfTodayIso(): string {
   const d = new Date();
@@ -64,10 +65,8 @@ export default function DashboardPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Panel de control</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Resumen operativo del sistema de cobranza.
-        </p>
+        <h1 className={pageTitle}>Panel de control</h1>
+        <p className={pageSubtitle}>Resumen operativo del sistema de cobranza.</p>
       </div>
 
       {hasError && (
@@ -95,10 +94,10 @@ export default function DashboardPage() {
       </div>
 
       <div className="mb-8 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Cobros de hoy</h2>
-            <Link href="/pagos" className="text-sm text-blue-600 hover:underline">
+            <Link href="/pagos" className={`text-sm ${linkClass}`}>
               Ver todos
             </Link>
           </div>
@@ -110,26 +109,31 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="card p-5">
           <h2 className="mb-3 font-semibold text-slate-900">Accesos rápidos</h2>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/clients" className="text-blue-600 hover:underline">
+              <Link href="/clients" className={linkClass}>
                 Gestionar clientes
               </Link>
             </li>
             <li>
-              <Link href="/routes" className="text-blue-600 hover:underline">
+              <Link href="/routes" className={linkClass}>
                 Planificar rutas
               </Link>
             </li>
             <li>
-              <Link href="/rules" className="text-blue-600 hover:underline">
+              <Link href="/caja" className={linkClass}>
+                Consultar caja
+              </Link>
+            </li>
+            <li>
+              <Link href="/rules" className={linkClass}>
                 Configurar reglas de negocio
               </Link>
             </li>
             <li>
-              <Link href="/auditoria" className="text-blue-600 hover:underline">
+              <Link href="/auditoria" className={linkClass}>
                 Consultar auditoría
               </Link>
             </li>
@@ -137,10 +141,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="card p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-semibold text-slate-900">Actividad reciente</h2>
-          <Link href="/auditoria" className="text-sm text-blue-600 hover:underline">
+          <Link href="/auditoria" className={`text-sm ${linkClass}`}>
             Ver auditoría completa
           </Link>
         </div>
@@ -196,8 +200,8 @@ function StatCard({
   return (
     <Link
       href={href}
-      className={`rounded-xl border bg-white p-5 shadow-sm transition hover:border-blue-200 ${
-        highlight ? "border-amber-300 bg-amber-50" : "border-slate-200"
+      className={`card-interactive block p-5 ${
+        highlight ? "border-amber-300 bg-amber-50/80" : ""
       }`}
     >
       <p className="text-sm text-slate-600">{label}</p>

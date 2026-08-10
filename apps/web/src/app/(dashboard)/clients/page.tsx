@@ -18,6 +18,7 @@ import {
   CreateClientFormValues,
   createClientSchema,
 } from "@/lib/schemas/auth.schema";
+import { btnPrimary, btnSecondary, emptyState, inputClass, labelClass, linkClass, pageSubtitle, pageTitle, tableShell } from "@/lib/ui-classes";
 
 export default function ClientsPage() {
   const queryClient = useQueryClient();
@@ -55,16 +56,10 @@ export default function ClientsPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Clientes</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Administra la cartera de clientes del sistema.
-          </p>
+          <h1 className={pageTitle}>Clientes</h1>
+          <p className={pageSubtitle}>Administra la cartera de clientes del sistema.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowCreate(true)}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-        >
+        <button type="button" onClick={() => setShowCreate(true)} className={btnPrimary}>
           Nuevo cliente
         </button>
       </div>
@@ -83,7 +78,7 @@ export default function ClientsPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por nombre, código…"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+          className={inputClass}
         />
         <select
           value={status}
@@ -121,15 +116,17 @@ export default function ClientsPage() {
       )}
 
       {!isLoading && !error && clients.length === 0 && (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center text-slate-600">
-          No hay clientes que coincidan con la búsqueda.
+        <div className={emptyState}>
+          {search || status
+            ? "No hay clientes que coincidan con la búsqueda."
+            : "No hay clientes registrados."}
         </div>
       )}
 
       {clients.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+        <div className={tableShell}>
+          <table>
+            <thead>
               <tr>
                 <th className="px-4 py-3 font-medium">Código</th>
                 <th className="px-4 py-3 font-medium">Nombre</th>
@@ -160,7 +157,7 @@ export default function ClientsPage() {
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/clients/${client.id}`}
-                      className="text-blue-600 hover:underline"
+                      className={linkClass}
                     >
                       Ver
                     </Link>
@@ -286,13 +283,6 @@ function CreateClientModal({
     </Modal>
   );
 }
-
-const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
-const btnPrimary =
-  "rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
-const btnSecondary =
-  "rounded-lg border border-slate-300 px-4 py-2 text-sm";
 
 function Field({
   label,

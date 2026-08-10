@@ -15,19 +15,43 @@ export class ApiError extends Error {
   }
 }
 
-function getApiBaseUrl(): string {
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+export function isNetworkError(error: unknown): boolean {
+  if (error instanceof NetworkError) return true;
+  if (error instanceof TypeError) return true;
+  if (error instanceof Error && error.message === "Failed to fetch") return true;
+  return false;
+}
+
+function useDevProxy(): boolean {
+  return process.env.NEXT_PUBLIC_API_PROXY !== "false";
+}
+
+export function getApiBaseUrl(): string {
+  const serverFallback = "http://127.0.0.1:3001/v1";
+
+  if (typeof window !== "undefined" && useDevProxy()) {
+    return `${window.location.origin}/v1`;
+  }
+
   const fallback = "http://localhost:3001";
   const raw = (process.env.NEXT_PUBLIC_API_URL ?? fallback).trim();
+
   if (!raw || raw === "/") {
-    return `${fallback}/v1`;
+    return typeof window === "undefined" ? serverFallback : `${window.location.origin}/v1`;
   }
 
   const base = raw.replace(/\/+$/, "");
   const withVersion = base.endsWith("/v1") ? base : `${base}/v1`;
 
-  // Must be absolute — relative URLs hit the Next.js dev server (port 3000).
   if (!/^https?:\/\//i.test(withVersion)) {
-    return `${fallback}/v1`;
+    return typeof window === "undefined" ? serverFallback : `${window.location.origin}/v1`;
   }
 
   return withVersion;
@@ -44,10 +68,17 @@ export async function apiFetch<T>(
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    ...init,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch {
+    throw new NetworkError(
+      "No se pudo conectar con la API. Verifica que esté activa (pnpm api:dev).",
+    );
+  }
 
   const body = (await response.json().catch(() => ({}))) as T & ApiErrorBody;
 

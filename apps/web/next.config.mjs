@@ -38,9 +38,23 @@ loadEnvFile(path.join(__dirname, "../../.env"));
 loadEnvFile(path.join(__dirname, ".env"));
 loadEnvFile(path.join(__dirname, ".env.local"), true);
 
+const apiPort = process.env.API_PORT ?? "3001";
+const apiHost = process.env.API_HOST ?? "127.0.0.1";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  async rewrites() {
+    if (process.env.NODE_ENV === "production") {
+      return [];
+    }
+    return [
+      {
+        source: "/v1/:path*",
+        destination: `http://${apiHost}:${apiPort}/v1/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -72,7 +72,7 @@ export default function CreditDetailPage() {
       <div className="mb-6">
         <Link
           href={`/clients/${credit.clientId}`}
-          className="text-sm text-blue-600 hover:underline"
+          className="text-sm text-brand-600 hover:underline"
         >
           ← Volver al cliente
         </Link>
@@ -209,7 +209,7 @@ function RegenerateModal({
 }
 
 const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
-const btnPrimary = "rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
+const btnPrimary = "rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
 const btnSecondary = "rounded-lg border border-slate-300 px-4 py-2 text-sm";
 
 function StatCard({ label, value }: { label: string; value: string }) {

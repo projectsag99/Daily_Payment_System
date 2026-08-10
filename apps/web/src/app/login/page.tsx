@@ -6,8 +6,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getHomePath } from "@/lib/auth/session";
-import { ApiError } from "@/lib/api-client";
+import { ApiError, isNetworkError } from "@/lib/api-client";
 import { LoginFormValues, loginSchema } from "@/lib/schemas/auth.schema";
+import { btnPrimary, inputClass, labelClass } from "@/lib/ui-classes";
 
 export default function LoginPage() {
   const { login, user, isAuthenticated, isLoading } = useAuth();
@@ -32,33 +33,41 @@ export default function LoginPage() {
     try {
       await login(values);
     } catch (err) {
-      const message =
-        err instanceof ApiError
-          ? err.message
-          : err instanceof Error
+      let message = "No se pudo iniciar sesión";
+      if (err instanceof ApiError) {
+        message = err.message;
+      } else if (isNetworkError(err)) {
+        message =
+          err instanceof Error
             ? err.message
-            : "No se pudo iniciar sesión";
+            : "No se pudo conectar con la API. Verifica que esté activa.";
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
       setError("root", { message });
     }
   }
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
+      <div className="flex min-h-screen items-center justify-center text-slate-600">
         Cargando…
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200/80 bg-white p-8 shadow-card-hover">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 text-lg font-bold text-white shadow-md shadow-brand-600/30">
+            DP
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
             Daily Payment
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Administradores y cobradores
+          <p className="mt-2 text-sm text-slate-500">
+            Panel para administradores y cobradores
           </p>
         </div>
 
@@ -71,17 +80,14 @@ export default function LoginPage() {
           method="post"
         >
           <div>
-            <label
-              htmlFor="email"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
+            <label htmlFor="email" className={labelClass}>
               Correo
             </label>
             <input
               id="email"
               type="email"
               autoComplete="email"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
+              className={inputClass}
               {...register("email")}
             />
             {errors.email && (
@@ -90,17 +96,14 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label
-              htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-slate-700"
-            >
+            <label htmlFor="password" className={labelClass}>
               Contraseña
             </label>
             <input
               id="password"
               type="password"
               autoComplete="current-password"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
+              className={inputClass}
               {...register("password")}
             />
             {errors.password && (
@@ -111,16 +114,12 @@ export default function LoginPage() {
           </div>
 
           {errors.root && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
               {errors.root.message}
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
-          >
+          <button type="submit" disabled={isSubmitting} className={`${btnPrimary} w-full`}>
             {isSubmitting ? "Ingresando…" : "Ingresar"}
           </button>
         </form>

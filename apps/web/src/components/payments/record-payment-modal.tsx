@@ -93,7 +93,7 @@ export function RecordPaymentModal({
             type="number"
             step="0.01"
             min="0.01"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-500 focus:ring-2"
             {...register("amount")}
           />
           {errors.amount && (
@@ -110,7 +110,7 @@ export function RecordPaymentModal({
           </label>
           <select
             id="paymentMethod"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-500 focus:ring-2"
             {...register("paymentMethod")}
           >
             {PAYMENT_METHODS.map((method) => (
@@ -131,7 +131,7 @@ export function RecordPaymentModal({
           <textarea
             id="notes"
             rows={2}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 focus:ring-2"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none ring-brand-500 focus:ring-2"
             {...register("notes")}
           />
         </div>
@@ -155,7 +155,7 @@ export function RecordPaymentModal({
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
+            className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-60"
           >
             {mutation.isPending ? "Registrando…" : "Registrar pago"}
           </button>

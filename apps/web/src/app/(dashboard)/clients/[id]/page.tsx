@@ -118,7 +118,7 @@ export default function ClientDetailPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href="/clients" className="text-sm text-blue-600 hover:underline">
+        <Link href="/clients" className="text-sm text-brand-600 hover:underline">
           ← Volver a clientes
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">
@@ -204,7 +204,7 @@ export default function ClientDetailPage() {
                 <li key={creditId}>
                   <Link
                     href={`/credits/${creditId}`}
-                    className="text-blue-600 hover:underline"
+                    className="text-brand-600 hover:underline"
                   >
                     Crédito {creditId.slice(0, 8)}…
                   </Link>
@@ -347,7 +347,7 @@ function CreateCreditModal({
 }
 
 const inputClass = "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
-const btnPrimary = "rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
+const btnPrimary = "rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60";
 const btnSecondary = "rounded-lg border border-slate-300 px-4 py-2 text-sm";
 
 function Input({

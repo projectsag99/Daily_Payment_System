@@ -60,7 +60,7 @@ export default function NotificationsPage() {
             className={`rounded-xl border p-4 shadow-sm ${
               item.readAt
                 ? "border-slate-200 bg-white"
-                : "border-blue-200 bg-blue-50"
+                : "border-brand-200 bg-brand-50"
             }`}
           >
             <div className="flex items-start justify-between gap-4">

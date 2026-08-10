@@ -66,6 +66,7 @@ const ADMIN_ROUTE_PREFIXES = [
   "/rules",
   "/credits",
   "/pagos",
+  "/caja",
   "/auditoria",
 ];
 

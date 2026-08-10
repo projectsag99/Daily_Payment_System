@@ -167,7 +167,7 @@ export default function CollectorsPage() {
             onClick={() => setTab(item.key)}
             className={`border-b-2 px-4 py-2 text-sm font-medium ${
               tab === item.key
-                ? "border-blue-600 text-blue-600"
+                ? "border-brand-600 text-brand-600"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             }`}
           >
