@@ -66,6 +66,33 @@ export const createClientSchema = z
 
 export type CreateClientFormValues = z.infer<typeof createClientSchema>;
 
+const createClientCreditFieldsSchema = z.object({
+  creditAmount: z.coerce.number().min(0.01, "Ingresa el monto del crédito"),
+  creditInterestPercent: z.coerce
+    .number()
+    .min(0, "El porcentaje no puede ser negativo")
+    .max(100, "El porcentaje no puede superar 100"),
+  creditInstallments: z.coerce
+    .number()
+    .int("Las cuotas deben ser un número entero")
+    .min(1, "Mínimo 1 cuota")
+    .max(3650, "Máximo 3650 cuotas"),
+});
+
+export const createClientWithCreditSchema =
+  createClientCreditFieldsSchema.and(createClientSchema);
+
+export type CreateClientWithCreditFormValues = z.infer<
+  typeof createClientWithCreditSchema
+>;
+
+export const CREATE_CLIENT_CREDIT_DEFAULTS = {
+  creditInterestPercent: 20,
+  creditInstallments: 20,
+} as const;
+
+export const CREATE_CLIENT_INSTALLMENT_PRESETS = [20, 30] as const;
+
 export type CreateClientPayload = Omit<
   CreateClientFormValues,
   "cityCustom" | "phoneLocal"

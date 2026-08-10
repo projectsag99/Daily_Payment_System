@@ -2,37 +2,18 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  useForm,
-  UseFormRegister,
-  UseFormSetValue,
-  UseFormWatch,
-  FieldErrors,
-} from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
-import { Modal } from "@/components/ui/modal";
-import {
-  RouteLocationFields,
-  RouteLocationFieldsValues,
-} from "@/components/route-location-fields";
-import { LocationPicker } from "@/components/location-picker";
+import { CreateClientModal } from "@/components/create-client-modal";
 import { ApiError } from "@/lib/api-client";
-import { createClient, fetchClients } from "@/lib/api/clients";
+import { fetchClients } from "@/lib/api/clients";
 import {
   CLIENT_STATUSES,
   CLIENT_STATUS_LABELS,
   ClientStatus,
 } from "@/lib/constants";
-import { getCountryPhonePrefix } from "@/lib/constants/route-locations";
-import {
-  CreateClientFormValues,
-  createClientSchema,
-  toCreateClientPayload,
-} from "@/lib/schemas/auth.schema";
-import { btnPrimary, btnSecondary, emptyState, inputClass, labelClass, linkClass, pageSubtitle, pageTitle, tableShell } from "@/lib/ui-classes";
+import { btnPrimary, emptyState, inputClass, linkClass, pageSubtitle, pageTitle, tableShell } from "@/lib/ui-classes";
 
 export default function ClientsPage() {
   const router = useRouter();
@@ -55,16 +36,20 @@ export default function ClientsPage() {
       }),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (values: CreateClientFormValues) =>
-      createClient(toCreateClientPayload(values)),
-    onSuccess: (client) => {
-      setFeedback(`Cliente creado correctamente (${client.code}).`);
-      setShowCreate(false);
-      void queryClient.invalidateQueries({ queryKey: ["clients"] });
-      router.push(`/clients/${client.id}`);
-    },
-  });
+  function handleCreateSuccess(client: { id: string; code: string }) {
+    setFeedback(`Cliente y crédito creados correctamente (${client.code}).`);
+    setShowCreate(false);
+    void queryClient.invalidateQueries({ queryKey: ["clients"] });
+    router.push(`/clients/${client.id}`);
+  }
+
+  function handleOpenCreate() {
+    setShowCreate(true);
+  }
+
+  function handleCloseCreate() {
+    setShowCreate(false);
+  }
 
   const clients = data?.data ?? [];
   const meta = data?.meta;
@@ -76,7 +61,7 @@ export default function ClientsPage() {
           <h1 className={pageTitle}>Clientes</h1>
           <p className={pageSubtitle}>Administra la cartera de clientes del sistema.</p>
         </div>
-        <button type="button" onClick={() => setShowCreate(true)} className={btnPrimary}>
+        <button type="button" onClick={handleOpenCreate} className={btnPrimary}>
           Nuevo cliente
         </button>
       </div>
@@ -228,180 +213,10 @@ export default function ClientsPage() {
 
       {showCreate && (
         <CreateClientModal
-          isSubmitting={createMutation.isPending}
-          error={createMutation.error}
-          onClose={() => setShowCreate(false)}
-          onSubmit={(values) => createMutation.mutate(values)}
+          onClose={handleCloseCreate}
+          onSuccess={handleCreateSuccess}
         />
       )}
-    </div>
-  );
-}
-
-function CreateClientModal({
-  isSubmitting,
-  error,
-  onClose,
-  onSubmit,
-}: {
-  isSubmitting: boolean;
-  error: Error | null;
-  onClose: () => void;
-  onSubmit: (values: CreateClientFormValues) => void;
-}) {
-  const form = useForm<CreateClientFormValues>({
-    resolver: zodResolver(createClientSchema),
-  });
-
-  const selectedCountry = form.watch("country");
-  const selectedDepartment = form.watch("department");
-  const selectedCity = form.watch("city");
-  const selectedCityCustom = form.watch("cityCustom");
-  const lat = form.watch("lat");
-  const lng = form.watch("lng");
-  const phonePrefix = selectedCountry
-    ? getCountryPhonePrefix(selectedCountry)
-    : "";
-  const mapLocation =
-    typeof lat === "number" &&
-    typeof lng === "number" &&
-    !Number.isNaN(lat) &&
-    !Number.isNaN(lng)
-      ? { lat, lng }
-      : null;
-
-  return (
-    <Modal title="Nuevo cliente" onClose={onClose} wide>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6"
-      >
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">
-            Información personal
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Nombre *" error={form.formState.errors.firstName?.message}>
-              <input className={inputClass} {...form.register("firstName")} />
-            </Field>
-            <Field label="Apellido *" error={form.formState.errors.lastName?.message}>
-              <input className={inputClass} {...form.register("lastName")} />
-            </Field>
-            <Field label="Cédula" error={form.formState.errors.nationalId?.message}>
-              <input className={inputClass} {...form.register("nationalId")} />
-            </Field>
-            <Field label="Código del cliente">
-              <input
-                className={`${inputClass} bg-slate-50 text-slate-500`}
-                value="Se genera automáticamente al guardar"
-                readOnly
-                disabled
-              />
-            </Field>
-            <Field label="Teléfono" error={form.formState.errors.phoneLocal?.message}>
-              <div className="flex">
-                <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-600">
-                  {phonePrefix ? `+${phonePrefix}` : "—"}
-                </span>
-                <input
-                  className={`${inputClass} rounded-l-none`}
-                  placeholder={selectedCountry ? "3001234567" : "Selecciona un país primero"}
-                  disabled={!selectedCountry}
-                  {...form.register("phoneLocal")}
-                />
-              </div>
-            </Field>
-            <Field label="Correo" error={form.formState.errors.email?.message}>
-              <input className={inputClass} type="email" {...form.register("email")} />
-            </Field>
-          </div>
-        </section>
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">Ubicación</h3>
-          <RouteLocationFields
-            register={
-              form.register as unknown as UseFormRegister<RouteLocationFieldsValues>
-            }
-            watch={form.watch as unknown as UseFormWatch<RouteLocationFieldsValues>}
-            setValue={
-              form.setValue as unknown as UseFormSetValue<RouteLocationFieldsValues>
-            }
-            errors={
-              form.formState.errors as FieldErrors<RouteLocationFieldsValues>
-            }
-            inputClass={inputClass}
-          />
-        </section>
-
-        <section>
-          <h3 className="mb-3 text-sm font-semibold text-slate-900">
-            Dirección y notas
-          </h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Dirección" className="sm:col-span-2">
-              <input className={inputClass} {...form.register("addressLine")} />
-            </Field>
-            <LocationPicker
-              className="sm:col-span-2"
-              countryCode={selectedCountry}
-              departmentCode={selectedDepartment}
-              city={selectedCity}
-              cityCustom={selectedCityCustom}
-              value={mapLocation}
-              onChange={(location) => {
-                if (location) {
-                  form.setValue("lat", location.lat, { shouldDirty: true });
-                  form.setValue("lng", location.lng, { shouldDirty: true });
-                } else {
-                  form.setValue("lat", undefined, { shouldDirty: true });
-                  form.setValue("lng", undefined, { shouldDirty: true });
-                }
-              }}
-            />
-            <Field label="Notas" className="sm:col-span-2">
-              <textarea rows={2} className={inputClass} {...form.register("notes")} />
-            </Field>
-          </div>
-        </section>
-
-        {error && (
-          <Alert variant="error">
-            {error instanceof ApiError ? error.message : "Error al crear"}
-          </Alert>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className={btnSecondary}>
-            Cancelar
-          </button>
-          <button type="submit" disabled={isSubmitting} className={btnPrimary}>
-            {isSubmitting ? "Guardando…" : "Crear cliente"}
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function Field({
-  label,
-  error,
-  className,
-  children,
-}: {
-  label: string;
-  error?: string;
-  className?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <label className="mb-1 block text-sm font-medium text-slate-700">
-        {label}
-      </label>
-      {children}
-      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }
