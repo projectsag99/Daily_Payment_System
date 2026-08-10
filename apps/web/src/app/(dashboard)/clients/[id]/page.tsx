@@ -12,6 +12,7 @@ import {
   RouteLocationFields,
   RouteLocationFieldsValues,
 } from "@/components/route-location-fields";
+import { LocationPicker } from "@/components/location-picker";
 import { ApiError } from "@/lib/api-client";
 import {
   fetchClient,
@@ -117,9 +118,18 @@ export default function ClientDetailPage() {
   });
 
   const selectedCountry = watch("country");
+  const lat = watch("lat");
+  const lng = watch("lng");
   const phonePrefix = selectedCountry
     ? getCountryPhonePrefix(selectedCountry)
     : "";
+  const mapLocation =
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
+      ? { lat, lng }
+      : null;
 
   if (clientQuery.isLoading) {
     return <p className="text-sm text-slate-600">Cargando cliente…</p>;
@@ -203,10 +213,19 @@ export default function ClientDetailPage() {
               inputClass={inputClass}
               requireAll={false}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Latitud" type="number" step="any" {...register("lat")} />
-              <Input label="Longitud" type="number" step="any" {...register("lng")} />
-            </div>
+            <LocationPicker
+              countryCode={selectedCountry}
+              value={mapLocation}
+              onChange={(location) => {
+                if (location) {
+                  setValue("lat", location.lat, { shouldDirty: true });
+                  setValue("lng", location.lng, { shouldDirty: true });
+                } else {
+                  setValue("lat", undefined, { shouldDirty: true });
+                  setValue("lng", undefined, { shouldDirty: true });
+                }
+              }}
+            />
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-700">
                 Notas

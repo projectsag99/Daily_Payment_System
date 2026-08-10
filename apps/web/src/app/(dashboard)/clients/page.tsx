@@ -17,6 +17,7 @@ import {
   RouteLocationFields,
   RouteLocationFieldsValues,
 } from "@/components/route-location-fields";
+import { LocationPicker } from "@/components/location-picker";
 import { ApiError } from "@/lib/api-client";
 import { createClient, fetchClients } from "@/lib/api/clients";
 import {
@@ -236,9 +237,18 @@ function CreateClientModal({
   });
 
   const selectedCountry = form.watch("country");
+  const lat = form.watch("lat");
+  const lng = form.watch("lng");
   const phonePrefix = selectedCountry
     ? getCountryPhonePrefix(selectedCountry)
     : "";
+  const mapLocation =
+    typeof lat === "number" &&
+    typeof lng === "number" &&
+    !Number.isNaN(lat) &&
+    !Number.isNaN(lng)
+      ? { lat, lng }
+      : null;
 
   return (
     <Modal title="Nuevo cliente" onClose={onClose} wide>
@@ -312,22 +322,20 @@ function CreateClientModal({
             <Field label="Dirección" className="sm:col-span-2">
               <input className={inputClass} {...form.register("addressLine")} />
             </Field>
-            <Field label="Latitud">
-              <input
-                className={inputClass}
-                type="number"
-                step="any"
-                {...form.register("lat")}
-              />
-            </Field>
-            <Field label="Longitud">
-              <input
-                className={inputClass}
-                type="number"
-                step="any"
-                {...form.register("lng")}
-              />
-            </Field>
+            <LocationPicker
+              className="sm:col-span-2"
+              countryCode={selectedCountry}
+              value={mapLocation}
+              onChange={(location) => {
+                if (location) {
+                  form.setValue("lat", location.lat, { shouldDirty: true });
+                  form.setValue("lng", location.lng, { shouldDirty: true });
+                } else {
+                  form.setValue("lat", undefined, { shouldDirty: true });
+                  form.setValue("lng", undefined, { shouldDirty: true });
+                }
+              }}
+            />
             <Field label="Notas" className="sm:col-span-2">
               <textarea rows={2} className={inputClass} {...form.register("notes")} />
             </Field>

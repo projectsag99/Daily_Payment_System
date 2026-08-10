@@ -23,6 +23,37 @@ export const ROUTE_COUNTRY_CODES = ROUTE_COUNTRIES.map(
 
 export const OTHER_ROUTE_CITY_VALUE = "__other__";
 
+export interface GeoPoint {
+  lat: number;
+  lng: number;
+}
+
+const COUNTRY_MAP_CENTERS: Record<RouteCountryCode, GeoPoint> = {
+  CO: { lat: 4.6097, lng: -74.0817 },
+  UY: { lat: -34.9011, lng: -56.1645 },
+  AR: { lat: -34.6037, lng: -58.3816 },
+  EC: { lat: -0.1807, lng: -78.4678 },
+  PE: { lat: -12.0464, lng: -77.0428 },
+  MX: { lat: 19.4326, lng: -99.1332 },
+  CL: { lat: -33.4489, lng: -70.6693 },
+  VE: { lat: 10.4806, lng: -66.9036 },
+  PA: { lat: 8.9824, lng: -79.5199 },
+  CR: { lat: 9.9281, lng: -84.0907 },
+  BO: { lat: -16.4897, lng: -68.1193 },
+  PY: { lat: -25.2637, lng: -57.5759 },
+};
+
+export function getCountryMapCenter(countryCode?: string): GeoPoint {
+  if (countryCode && countryCode in COUNTRY_MAP_CENTERS) {
+    return COUNTRY_MAP_CENTERS[countryCode as RouteCountryCode];
+  }
+  return COUNTRY_MAP_CENTERS.CO;
+}
+
+export function buildGoogleMapsUrl(point: GeoPoint): string {
+  return `https://www.google.com/maps?q=${point.lat},${point.lng}`;
+}
+
 export function getRouteStates(countryCode: string) {
   return State.getStatesOfCountry(countryCode).sort((a, b) =>
     a.name.localeCompare(b.name, "es"),
