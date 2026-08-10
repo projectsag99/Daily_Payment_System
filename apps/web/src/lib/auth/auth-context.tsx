@@ -71,12 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setIsLoading(true);
+    const loadingTimeoutId = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 15_000);
+
     try {
-      const token = await ensureValidAccessToken();
+      let token = await ensureValidAccessToken();
+      if (!token && getRefreshToken()) {
+        token = await refreshAccessToken();
+      }
       if (!token) {
-        if (!getRefreshToken()) {
-          setUser(null);
-        }
+        setUser(null);
         return;
       }
 
@@ -101,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       }
     } finally {
+      window.clearTimeout(loadingTimeoutId);
       setIsLoading(false);
     }
   }, [fetchCurrentUser]);

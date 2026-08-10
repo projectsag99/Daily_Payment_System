@@ -38,11 +38,15 @@ export async function refreshAccessToken(): Promise<string | null> {
       return null;
     }
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10_000);
+
     try {
       const response = await fetch(`${getApiBaseUrl()}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
+        signal: controller.signal,
       });
 
       const body = (await response.json().catch(() => ({}))) as LoginResponse & {
@@ -61,6 +65,7 @@ export async function refreshAccessToken(): Promise<string | null> {
       // Network errors should not log the user out immediately.
       return null;
     } finally {
+      window.clearTimeout(timeoutId);
       refreshPromise = null;
     }
   })();
@@ -70,7 +75,9 @@ export async function refreshAccessToken(): Promise<string | null> {
 
 export async function ensureValidAccessToken(): Promise<string | null> {
   const current = getAccessToken();
-  if (!current) return null;
+  if (!current) {
+    return getRefreshToken() ? refreshAccessToken() : null;
+  }
   if (!shouldRefreshAccessToken()) return current;
   return refreshAccessToken();
 }
