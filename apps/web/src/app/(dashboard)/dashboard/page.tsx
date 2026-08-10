@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useQueries } from "@tanstack/react-query";
 import { Alert } from "@/components/ui/alert";
-import { fetchAuditLogs } from "@/lib/api/audit";
 import { fetchClients } from "@/lib/api/clients";
 import { fetchCollectors } from "@/lib/api/collectors";
 import { fetchPayments } from "@/lib/api/payments";
 import { fetchRoutes } from "@/lib/api/routes";
-import { formatDateTime, formatMoney } from "@/lib/utils/format";
+import { formatMoney } from "@/lib/utils/format";
 import { linkClass, pageSubtitle, pageTitle } from "@/lib/ui-classes";
 
 function startOfTodayIso(): string {
@@ -18,7 +17,7 @@ function startOfTodayIso(): string {
 }
 
 export default function DashboardPage() {
-  const [clientsQ, pendingQ, activeQ, routesQ, paymentsQ, auditQ] = useQueries({
+  const [clientsQ, pendingQ, activeQ, routesQ, paymentsQ] = useQueries({
     queries: [
       {
         queryKey: ["dashboard", "clients"],
@@ -41,14 +40,10 @@ export default function DashboardPage() {
         queryFn: () =>
           fetchPayments({ from: startOfTodayIso(), limit: 100, page: 1 }),
       },
-      {
-        queryKey: ["dashboard", "audit"],
-        queryFn: () => fetchAuditLogs({ limit: 8, page: 1 }),
-      },
     ],
   });
 
-  const hasError = [clientsQ, pendingQ, activeQ, routesQ, paymentsQ, auditQ].some(
+  const hasError = [clientsQ, pendingQ, activeQ, routesQ, paymentsQ].some(
     (q) => q.error,
   );
 
@@ -60,7 +55,6 @@ export default function DashboardPage() {
   const totalCollectedToday = paymentsToday
     .filter((p) => p.status === "completed")
     .reduce((sum, p) => sum + p.amount, 0);
-  const auditLogs = auditQ.data?.data ?? [];
 
   return (
     <div>
@@ -93,7 +87,7 @@ export default function DashboardPage() {
         <StatCard label="Rutas activas" value={String(routesCount)} href="/routes" />
       </div>
 
-      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <div className="card p-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-semibold text-slate-900">Cobros de hoy</h2>
@@ -132,55 +126,8 @@ export default function DashboardPage() {
                 Configurar reglas de negocio
               </Link>
             </li>
-            <li>
-              <Link href="/auditoria" className={linkClass}>
-                Consultar auditoría
-              </Link>
-            </li>
           </ul>
         </div>
-      </div>
-
-      <div className="card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900">Actividad reciente</h2>
-          <Link href="/auditoria" className={`text-sm ${linkClass}`}>
-            Ver auditoría completa
-          </Link>
-        </div>
-        {auditQ.isLoading && (
-          <p className="text-sm text-slate-600">Cargando actividad…</p>
-        )}
-        {!auditQ.isLoading && auditLogs.length === 0 && (
-          <p className="text-sm text-slate-500">Sin registros de auditoría.</p>
-        )}
-        {auditLogs.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead className="text-left text-slate-600">
-                <tr>
-                  <th className="pb-2 pr-4">Fecha</th>
-                  <th className="pb-2 pr-4">Acción</th>
-                  <th className="pb-2 pr-4">Entidad</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {auditLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td className="py-2 pr-4 text-slate-600">
-                      {formatDateTime(log.createdAt)}
-                    </td>
-                    <td className="py-2 pr-4">{log.action}</td>
-                    <td className="py-2 pr-4 text-slate-600">
-                      {log.entityType}
-                      {log.entityId ? ` · ${log.entityId.slice(0, 8)}…` : ""}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );

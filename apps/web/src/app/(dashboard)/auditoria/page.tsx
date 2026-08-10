@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Alert } from "@/components/ui/alert";
 import { ApiError } from "@/lib/api-client";
 import { fetchAuditLogs } from "@/lib/api/audit";
 import { formatDateTime } from "@/lib/utils/format";
+import { linkClass, pageSubtitle, pageTitle } from "@/lib/ui-classes";
 
 export default function AuditoriaPage() {
   const [page, setPage] = useState(1);
@@ -29,8 +31,11 @@ export default function AuditoriaPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Auditoría</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <Link href="/ajustes" className={`text-sm ${linkClass}`}>
+          ← Ajustes
+        </Link>
+        <h1 className={`${pageTitle} mt-2`}>Auditoría</h1>
+        <p className={pageSubtitle}>
           Registro inmutable de acciones administrativas y de dominio.
         </p>
       </div>
