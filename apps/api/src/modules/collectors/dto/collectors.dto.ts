@@ -1,13 +1,22 @@
-import { IsOptional, IsString, MaxLength } from "class-validator";
+import { IsBoolean, IsOptional, IsString, MaxLength } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { CollectorStatus } from "../../../common/constants";
 import { IsEnum } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class ListCollectorsQueryDto {
   @ApiPropertyOptional({ enum: CollectorStatus })
   @IsOptional()
   @IsEnum(CollectorStatus)
   status?: CollectorStatus;
+
+  @ApiPropertyOptional({
+    description: "When true, returns active and pending collectors for route assignment",
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === "true" || value === true)
+  @IsBoolean()
+  assignable?: boolean;
 }
 
 export class ApproveCollectorDto {

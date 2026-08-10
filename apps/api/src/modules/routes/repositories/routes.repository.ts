@@ -310,7 +310,9 @@ export class RoutesRepository {
       `SELECT u.id
        FROM users u
        INNER JOIN collector_profiles cp ON cp.user_id = u.id
-       WHERE u.id = $1 AND u.deleted_at IS NULL`,
+       WHERE u.id = $1
+         AND u.deleted_at IS NULL
+         AND cp.status IN ('active', 'pending')`,
       [collectorId],
     );
     return rows.length > 0;

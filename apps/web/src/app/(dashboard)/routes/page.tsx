@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
 import { ApiError } from "@/lib/api-client";
-import { fetchActiveCollectors } from "@/lib/api/collectors";
+import { fetchAssignableCollectors } from "@/lib/api/collectors";
 import { createRoute, fetchRoutes } from "@/lib/api/routes";
 import {
   DAY_LABELS,
@@ -20,6 +20,7 @@ import {
   CreateRouteFormValues,
   createRouteSchema,
 } from "@/lib/schemas/auth.schema";
+import { collectorSelectLabel } from "@/lib/utils/collector-label";
 
 export default function RoutesPage() {
   const queryClient = useQueryClient();
@@ -175,8 +176,8 @@ function CreateRouteModal({
   onSubmit: (values: CreateRouteFormValues) => void;
 }) {
   const collectorsQuery = useQuery({
-    queryKey: ["collectors-active"],
-    queryFn: fetchActiveCollectors,
+    queryKey: ["collectors-assignable"],
+    queryFn: fetchAssignableCollectors,
   });
 
   const { register, handleSubmit, formState: { errors } } = useForm<CreateRouteFormValues>({
@@ -184,6 +185,7 @@ function CreateRouteModal({
   });
 
   const collectors = collectorsQuery.data ?? [];
+  const pendingCount = collectors.filter((c) => c.status === "pending").length;
 
   return (
     <Modal title="Nueva ruta" onClose={onClose}>
@@ -201,16 +203,31 @@ function CreateRouteModal({
             </option>
             {collectors.map((c) => (
               <option key={c.userId} value={c.userId}>
-                {c.firstName} {c.lastName}
+                {collectorSelectLabel(c)}
               </option>
             ))}
           </select>
           {errors.collectorId && (
             <p className="mt-1 text-sm text-red-600">{errors.collectorId.message}</p>
           )}
-          {!collectorsQuery.isLoading && collectors.length === 0 && (
+          {collectorsQuery.error && (
+            <p className="mt-1 text-sm text-red-600">
+              No se pudieron cargar los cobradores. Revisa la conexión con la API.
+            </p>
+          )}
+          {!collectorsQuery.isLoading && !collectorsQuery.error && collectors.length === 0 && (
             <p className="mt-1 text-xs text-slate-500">
-              No hay cobradores activos. Puedes asignar uno después desde la ruta.
+              No hay cobradores registrados. Crea una cuenta de cobrador desde el registro
+              o en la sección Cobradores.
+            </p>
+          )}
+          {pendingCount > 0 && (
+            <p className="mt-1 text-xs text-amber-700">
+              {pendingCount} cobrador(es) pendiente(s) de aprobación. Apruébalos en{" "}
+              <Link href="/collectors" className="font-medium underline">
+                Cobradores → Pendientes
+              </Link>{" "}
+              para que puedan operar en la app.
             </p>
           )}
         </div>

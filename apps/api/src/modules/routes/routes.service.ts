@@ -298,7 +298,7 @@ export class RoutesService {
     if (!collectorValid) {
       throw new BadRequestException({
         code: ApiErrorCode.VALIDATION_ERROR,
-        message: "El cobrador no existe",
+        message: "El cobrador no existe o no puede asignarse a una ruta",
       });
     }
 

@@ -34,7 +34,7 @@ export class CollectorsController {
   @RequirePermissions("collectors:read")
   @ApiOperation({ summary: "List collectors" })
   list(@Query() query: ListCollectorsQueryDto) {
-    return this.collectorsService.list(query.status);
+    return this.collectorsService.list(query.status, query.assignable);
   }
 
   @Get(":id")

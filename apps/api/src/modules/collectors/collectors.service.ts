@@ -33,8 +33,10 @@ export class CollectorsService {
     private readonly auditService: AuditService,
   ) {}
 
-  async list(status?: CollectorStatus) {
-    const profiles = await this.collectorsRepository.findAll(status);
+  async list(status?: CollectorStatus, assignable?: boolean) {
+    const profiles = assignable
+      ? await this.collectorsRepository.findAssignable()
+      : await this.collectorsRepository.findAll(status);
     return profiles.map((p) => this.toSummary(p));
   }
 

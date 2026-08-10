@@ -46,6 +46,19 @@ export class CollectorsRepository {
     return qb.orderBy("profile.created_at", "DESC").getMany();
   }
 
+  findAssignable(): Promise<CollectorProfile[]> {
+    return this.profileRepository
+      .createQueryBuilder("profile")
+      .leftJoinAndSelect("profile.user", "user")
+      .leftJoinAndSelect("user.roles", "roles")
+      .where("profile.status IN (:...statuses)", {
+        statuses: [CollectorStatus.ACTIVE, CollectorStatus.PENDING],
+      })
+      .orderBy("profile.status", "ASC")
+      .addOrderBy("profile.created_at", "DESC")
+      .getMany();
+  }
+
   save(profile: CollectorProfile): Promise<CollectorProfile> {
     return this.profileRepository.save(profile);
   }

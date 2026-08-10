@@ -23,6 +23,10 @@ export async function fetchActiveCollectors(): Promise<CollectorSummary[]> {
   return fetchCollectors("active");
 }
 
+export async function fetchAssignableCollectors(): Promise<CollectorSummary[]> {
+  return apiFetch<CollectorSummary[]>("/collectors?assignable=true", authHeaders());
+}
+
 export async function fetchCollector(id: string): Promise<CollectorSummary> {
   return apiFetch<CollectorSummary>(`/collectors/${id}`, authHeaders());
 }

@@ -9,7 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
 import { ApiError } from "@/lib/api-client";
-import { fetchActiveCollectors } from "@/lib/api/collectors";
+import { fetchAssignableCollectors } from "@/lib/api/collectors";
 import { fetchClients } from "@/lib/api/clients";
 import {
   assignRouteCollector,
@@ -31,7 +31,9 @@ import {
   assignCollectorSchema,
   updateRouteSchema,
 } from "@/lib/schemas/auth.schema";
+import { CollectorSummary } from "@/lib/types/collectors";
 import { formatDate } from "@/lib/utils/format";
+import { collectorSelectLabel } from "@/lib/utils/collector-label";
 
 export default function RouteDetailPage() {
   const params = useParams<{ id: string }>();
@@ -64,8 +66,8 @@ export default function RouteDetailPage() {
   });
 
   const activeCollectorsQuery = useQuery({
-    queryKey: ["collectors-active"],
-    queryFn: fetchActiveCollectors,
+    queryKey: ["collectors-assignable"],
+    queryFn: fetchAssignableCollectors,
   });
 
   useEffect(() => {
@@ -336,7 +338,7 @@ function AssignCollectorModal({
   onClose,
   onSubmit,
 }: {
-  collectors: { userId: string; firstName: string; lastName: string }[];
+  collectors: CollectorSummary[];
   isSubmitting: boolean;
   error: Error | null;
   hasCurrentCollector?: boolean;
@@ -362,7 +364,7 @@ function AssignCollectorModal({
             <option value="">Seleccionar…</option>
             {collectors.map((c) => (
               <option key={c.userId} value={c.userId}>
-                {c.firstName} {c.lastName}
+                {collectorSelectLabel(c)}
               </option>
             ))}
           </select>
