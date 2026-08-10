@@ -4,10 +4,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
+import {
+  RouteLocationFields,
+  RouteLocationFieldsValues,
+} from "@/components/route-location-fields";
 import { ApiError } from "@/lib/api-client";
 import {
   fetchClient,
@@ -25,7 +29,13 @@ import {
   UpdateClientFormValues,
   createCreditSchema,
   updateClientSchema,
+  toUpdateClientPayload,
 } from "@/lib/schemas/auth.schema";
+import {
+  getCountryPhonePrefix,
+  routeFormLocationValues,
+  stripCountryPhonePrefix,
+} from "@/lib/constants/route-locations";
 import { formatDate, formatDateTime, formatMoney } from "@/lib/utils/format";
 
 export default function ClientDetailPage() {
@@ -52,7 +62,7 @@ export default function ClientDetailPage() {
 
   const updateMutation = useMutation({
     mutationFn: (values: UpdateClientFormValues) =>
-      updateClient(clientId, values),
+      updateClient(clientId, toUpdateClientPayload(values)),
     onSuccess: () => {
       setFeedback("Cliente actualizado.");
       void queryClient.invalidateQueries({ queryKey: ["client", clientId] });
@@ -77,6 +87,8 @@ export default function ClientDetailPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isDirty },
   } = useForm<UpdateClientFormValues>({
     resolver: zodResolver(updateClientSchema),
@@ -85,10 +97,17 @@ export default function ClientDetailPage() {
           firstName: client.firstName,
           lastName: client.lastName,
           nationalId: client.nationalId ?? "",
-          phone: client.phone ?? "",
+          phoneLocal: stripCountryPhonePrefix(
+            client.phone ?? "",
+            client.country ?? undefined,
+          ),
           email: client.email ?? "",
           addressLine: client.addressLine ?? "",
-          city: client.city ?? "",
+          ...routeFormLocationValues({
+            country: client.country,
+            department: client.department,
+            city: client.city,
+          }),
           lat: client.location?.lat,
           lng: client.location?.lng,
           status: client.status,
@@ -96,6 +115,11 @@ export default function ClientDetailPage() {
         }
       : undefined,
   });
+
+  const selectedCountry = watch("country");
+  const phonePrefix = selectedCountry
+    ? getCountryPhonePrefix(selectedCountry)
+    : "";
 
   if (clientQuery.isLoading) {
     return <p className="text-sm text-slate-600">Cargando cliente…</p>;
@@ -142,7 +166,25 @@ export default function ClientDetailPage() {
               <Input label="Nombre" error={errors.firstName?.message} {...register("firstName")} />
               <Input label="Apellido" error={errors.lastName?.message} {...register("lastName")} />
               <Input label="Cédula" {...register("nationalId")} />
-              <Input label="Teléfono" {...register("phone")} />
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Teléfono
+                </label>
+                <div className="flex">
+                  <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-600">
+                    {phonePrefix ? `+${phonePrefix}` : "—"}
+                  </span>
+                  <input
+                    className={`${inputClass} rounded-l-none`}
+                    placeholder={selectedCountry ? "3001234567" : "Selecciona un país"}
+                    disabled={!selectedCountry}
+                    {...register("phoneLocal")}
+                  />
+                </div>
+                {errors.phoneLocal && (
+                  <p className="mt-1 text-sm text-red-600">{errors.phoneLocal.message}</p>
+                )}
+              </div>
               <Input label="Correo" type="email" {...register("email")} />
               <Select label="Estado" {...register("status")}>
                 {CLIENT_STATUSES.map((s) => (
@@ -152,7 +194,16 @@ export default function ClientDetailPage() {
                 ))}
               </Select>
               <Input label="Dirección" className="sm:col-span-2" {...register("addressLine")} />
-              <Input label="Ciudad" {...register("city")} />
+            </div>
+            <RouteLocationFields
+              register={register as unknown as UseFormRegister<RouteLocationFieldsValues>}
+              watch={watch as unknown as UseFormWatch<RouteLocationFieldsValues>}
+              setValue={setValue as unknown as UseFormSetValue<RouteLocationFieldsValues>}
+              errors={errors as FieldErrors<RouteLocationFieldsValues>}
+              inputClass={inputClass}
+              requireAll={false}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
               <Input label="Latitud" type="number" step="any" {...register("lat")} />
               <Input label="Longitud" type="number" step="any" {...register("lng")} />
             </div>

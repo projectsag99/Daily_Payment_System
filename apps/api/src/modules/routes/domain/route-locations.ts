@@ -1,4 +1,4 @@
-import { City, State } from "country-state-city";
+import { City, Country, State } from "country-state-city";
 
 export const ROUTE_COUNTRIES = [
   { code: "CO", name: "Colombia" },
@@ -87,4 +87,29 @@ export function formatDepartmentLabel(name: string): string {
     .replace(/ Province$/i, "")
     .replace(/ Region$/i, "")
     .trim();
+}
+
+export function getCountryPhonePrefix(countryCode: string): string {
+  if (!isValidRouteCountryCode(countryCode)) {
+    return "";
+  }
+  return Country.getCountryByCode(countryCode)?.phonecode ?? "";
+}
+
+export function formatPhoneWithCountryPrefix(
+  countryCode: string,
+  localNumber: string,
+): string {
+  const prefix = getCountryPhonePrefix(countryCode);
+  const digits = localNumber.replace(/\D/g, "");
+  if (!digits) {
+    return "";
+  }
+  if (!prefix) {
+    return digits.startsWith("+") ? digits : `+${digits}`;
+  }
+  if (digits.startsWith(prefix)) {
+    return `+${digits}`;
+  }
+  return `+${prefix}${digits}`;
 }

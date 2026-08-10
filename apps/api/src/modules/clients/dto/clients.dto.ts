@@ -3,6 +3,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNumber,
   IsOptional,
   IsString,
@@ -13,6 +14,7 @@ import {
 } from "class-validator";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { ClientStatus, DocumentType, ShiftType } from "../../../common/constants";
+import { ROUTE_COUNTRY_CODES } from "../../routes/domain/route-locations";
 
 export class LocationDto {
   @ApiProperty({ example: 4.6097 })
@@ -27,11 +29,6 @@ export class LocationDto {
 }
 
 export class CreateClientDto {
-  @ApiProperty({ example: "CLI-0042" })
-  @IsString()
-  @MaxLength(50)
-  code!: string;
-
   @ApiProperty({ example: "María" })
   @IsString()
   @MaxLength(100)
@@ -65,11 +62,19 @@ export class CreateClientDto {
   @IsString()
   addressLine?: string;
 
-  @ApiPropertyOptional({ example: "Bogotá" })
-  @IsOptional()
+  @ApiProperty({ example: "CO" })
+  @IsIn(ROUTE_COUNTRY_CODES)
+  country!: string;
+
+  @ApiProperty({ example: "DC" })
+  @IsString()
+  @MaxLength(10)
+  department!: string;
+
+  @ApiProperty({ example: "Bogotá" })
   @IsString()
   @MaxLength(100)
-  city?: string;
+  city!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -106,7 +111,7 @@ export class UpdateClientDto {
   @IsOptional()
   @IsString()
   @MaxLength(30)
-  phone?: string;
+  phone?: string | null;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -119,7 +124,18 @@ export class UpdateClientDto {
   @IsString()
   addressLine?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ example: "CO" })
+  @IsOptional()
+  @IsIn(ROUTE_COUNTRY_CODES)
+  country?: string;
+
+  @ApiPropertyOptional({ example: "DC" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  department?: string;
+
+  @ApiPropertyOptional({ example: "Bogotá" })
   @IsOptional()
   @IsString()
   @MaxLength(100)

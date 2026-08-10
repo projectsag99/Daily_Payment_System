@@ -3,10 +3,20 @@
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import {
+  useForm,
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+  FieldErrors,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
+import {
+  RouteLocationFields,
+  RouteLocationFieldsValues,
+} from "@/components/route-location-fields";
 import { ApiError } from "@/lib/api-client";
 import { createClient, fetchClients } from "@/lib/api/clients";
 import {
@@ -14,9 +24,11 @@ import {
   CLIENT_STATUS_LABELS,
   ClientStatus,
 } from "@/lib/constants";
+import { getCountryPhonePrefix } from "@/lib/constants/route-locations";
 import {
   CreateClientFormValues,
   createClientSchema,
+  toCreateClientPayload,
 } from "@/lib/schemas/auth.schema";
 import { btnPrimary, btnSecondary, emptyState, inputClass, labelClass, linkClass, pageSubtitle, pageTitle, tableShell } from "@/lib/ui-classes";
 
@@ -41,9 +53,10 @@ export default function ClientsPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: createClient,
-    onSuccess: () => {
-      setFeedback("Cliente creado correctamente.");
+    mutationFn: (values: CreateClientFormValues) =>
+      createClient(toCreateClientPayload(values)),
+    onSuccess: (client) => {
+      setFeedback(`Cliente creado correctamente (${client.code}).`);
       setShowCreate(false);
       void queryClient.invalidateQueries({ queryKey: ["clients"] });
     },
@@ -218,60 +231,116 @@ function CreateClientModal({
   onClose: () => void;
   onSubmit: (values: CreateClientFormValues) => void;
 }) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<CreateClientFormValues>({
+  const form = useForm<CreateClientFormValues>({
     resolver: zodResolver(createClientSchema),
   });
 
+  const selectedCountry = form.watch("country");
+  const phonePrefix = selectedCountry
+    ? getCountryPhonePrefix(selectedCountry)
+    : "";
+
   return (
     <Modal title="Nuevo cliente" onClose={onClose} wide>
-      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
-        <Field label="Código *" error={errors.code?.message}>
-          <input className={inputClass} {...register("code")} />
-        </Field>
-        <Field label="Cédula" error={errors.nationalId?.message}>
-          <input className={inputClass} {...register("nationalId")} />
-        </Field>
-        <Field label="Nombre *" error={errors.firstName?.message}>
-          <input className={inputClass} {...register("firstName")} />
-        </Field>
-        <Field label="Apellido *" error={errors.lastName?.message}>
-          <input className={inputClass} {...register("lastName")} />
-        </Field>
-        <Field label="Teléfono" error={errors.phone?.message}>
-          <input className={inputClass} {...register("phone")} />
-        </Field>
-        <Field label="Correo" error={errors.email?.message}>
-          <input className={inputClass} type="email" {...register("email")} />
-        </Field>
-        <Field label="Dirección" className="sm:col-span-2">
-          <input className={inputClass} {...register("addressLine")} />
-        </Field>
-        <Field label="Ciudad">
-          <input className={inputClass} {...register("city")} />
-        </Field>
-        <Field label="Latitud">
-          <input className={inputClass} type="number" step="any" {...register("lat")} />
-        </Field>
-        <Field label="Longitud">
-          <input className={inputClass} type="number" step="any" {...register("lng")} />
-        </Field>
-        <Field label="Notas" className="sm:col-span-2">
-          <textarea rows={2} className={inputClass} {...register("notes")} />
-        </Field>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-6"
+      >
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-slate-900">
+            Información personal
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Nombre *" error={form.formState.errors.firstName?.message}>
+              <input className={inputClass} {...form.register("firstName")} />
+            </Field>
+            <Field label="Apellido *" error={form.formState.errors.lastName?.message}>
+              <input className={inputClass} {...form.register("lastName")} />
+            </Field>
+            <Field label="Cédula" error={form.formState.errors.nationalId?.message}>
+              <input className={inputClass} {...form.register("nationalId")} />
+            </Field>
+            <Field label="Código del cliente">
+              <input
+                className={`${inputClass} bg-slate-50 text-slate-500`}
+                value="Se genera automáticamente al guardar"
+                readOnly
+                disabled
+              />
+            </Field>
+            <Field label="Teléfono" error={form.formState.errors.phoneLocal?.message}>
+              <div className="flex">
+                <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-600">
+                  {phonePrefix ? `+${phonePrefix}` : "—"}
+                </span>
+                <input
+                  className={`${inputClass} rounded-l-none`}
+                  placeholder={selectedCountry ? "3001234567" : "Selecciona un país primero"}
+                  disabled={!selectedCountry}
+                  {...form.register("phoneLocal")}
+                />
+              </div>
+            </Field>
+            <Field label="Correo" error={form.formState.errors.email?.message}>
+              <input className={inputClass} type="email" {...form.register("email")} />
+            </Field>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-slate-900">Ubicación</h3>
+          <RouteLocationFields
+            register={
+              form.register as unknown as UseFormRegister<RouteLocationFieldsValues>
+            }
+            watch={form.watch as unknown as UseFormWatch<RouteLocationFieldsValues>}
+            setValue={
+              form.setValue as unknown as UseFormSetValue<RouteLocationFieldsValues>
+            }
+            errors={
+              form.formState.errors as FieldErrors<RouteLocationFieldsValues>
+            }
+            inputClass={inputClass}
+          />
+        </section>
+
+        <section>
+          <h3 className="mb-3 text-sm font-semibold text-slate-900">
+            Dirección y notas
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Dirección" className="sm:col-span-2">
+              <input className={inputClass} {...form.register("addressLine")} />
+            </Field>
+            <Field label="Latitud">
+              <input
+                className={inputClass}
+                type="number"
+                step="any"
+                {...form.register("lat")}
+              />
+            </Field>
+            <Field label="Longitud">
+              <input
+                className={inputClass}
+                type="number"
+                step="any"
+                {...form.register("lng")}
+              />
+            </Field>
+            <Field label="Notas" className="sm:col-span-2">
+              <textarea rows={2} className={inputClass} {...form.register("notes")} />
+            </Field>
+          </div>
+        </section>
 
         {error && (
-          <div className="sm:col-span-2">
-            <Alert variant="error">
-              {error instanceof ApiError ? error.message : "Error al crear"}
-            </Alert>
-          </div>
+          <Alert variant="error">
+            {error instanceof ApiError ? error.message : "Error al crear"}
+          </Alert>
         )}
 
-        <div className="flex justify-end gap-2 sm:col-span-2">
+        <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className={btnSecondary}>
             Cancelar
           </button>

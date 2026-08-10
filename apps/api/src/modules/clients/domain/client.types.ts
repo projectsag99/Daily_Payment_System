@@ -42,6 +42,8 @@ export interface ClientRow {
   phone: string | null;
   email: string | null;
   address_line: string | null;
+  country: string | null;
+  department: string | null;
   city: string | null;
   lat: number | null;
   lng: number | null;

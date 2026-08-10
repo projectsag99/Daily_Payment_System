@@ -2,8 +2,8 @@ import { apiFetch } from "@/lib/api-client";
 import { authHeaders } from "@/lib/api/auth";
 import { ClientStatus } from "@/lib/constants";
 import {
-  CreateClientFormValues,
-  UpdateClientFormValues,
+  CreateClientPayload,
+  UpdateClientPayload,
 } from "@/lib/schemas/auth.schema";
 import {
   Client,
@@ -31,14 +31,23 @@ function toQuery(params: ListClientsParams): string {
   return qs ? `?${qs}` : "";
 }
 
-function toCreatePayload(values: CreateClientFormValues) {
-  const { lat, lng, email, ...rest } = values;
+function toApiCreatePayload(values: CreateClientPayload) {
+  const { lat, lng, ...rest } = values;
   return {
     ...rest,
-    email: email || undefined,
     location:
       lat !== undefined && lng !== undefined ? { lat, lng } : undefined,
   };
+}
+
+function toApiUpdatePayload(values: UpdateClientPayload) {
+  const { lat, lng, email, ...rest } = values;
+  const payload: Record<string, unknown> = { ...rest };
+  if (email !== undefined) payload.email = email || null;
+  if (lat !== undefined && lng !== undefined) {
+    payload.location = { lat, lng };
+  }
+  return payload;
 }
 
 export async function fetchClients(
@@ -51,29 +60,21 @@ export async function fetchClient(id: string): Promise<Client> {
   return apiFetch<Client>(`/clients/${id}`, authHeaders());
 }
 
-export async function createClient(
-  values: CreateClientFormValues,
-): Promise<Client> {
+export async function createClient(values: CreateClientPayload): Promise<Client> {
   return apiFetch<Client>("/clients", {
     method: "POST",
-    body: JSON.stringify(toCreatePayload(values)),
+    body: JSON.stringify(toApiCreatePayload(values)),
     ...authHeaders(),
   });
 }
 
 export async function updateClient(
   id: string,
-  values: UpdateClientFormValues,
+  values: UpdateClientPayload,
 ): Promise<Client> {
-  const { lat, lng, email, ...rest } = values;
-  const payload: Record<string, unknown> = { ...rest };
-  if (email !== undefined) payload.email = email || null;
-  if (lat !== undefined && lng !== undefined) {
-    payload.location = { lat, lng };
-  }
   return apiFetch<Client>(`/clients/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(payload),
+    body: JSON.stringify(toApiUpdatePayload(values)),
     ...authHeaders(),
   });
 }

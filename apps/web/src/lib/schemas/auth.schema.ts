@@ -3,11 +3,11 @@ import {
   CLIENT_STATUSES,
   NOTIFY_CHANNELS,
   RULE_TYPES,
-  SHIFT_TYPES,
 } from "@/lib/constants";
 import {
   OTHER_ROUTE_CITY_VALUE,
   ROUTE_COUNTRY_CODES,
+  formatPhoneWithCountryPrefix,
   resolveRouteCityValue,
 } from "@/lib/constants/route-locations";
 
@@ -36,37 +36,123 @@ const locationSchema = z.object({
   lng: z.coerce.number(),
 });
 
-export const createClientSchema = z.object({
-  code: z.string().min(1).max(50),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  nationalId: z.string().max(50).optional(),
-  phone: z.string().max(30).optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  addressLine: z.string().optional(),
-  city: z.string().max(100).optional(),
-  lat: z.coerce.number().optional(),
-  lng: z.coerce.number().optional(),
-  notes: z.string().optional(),
-});
+export const createClientSchema = z
+  .object({
+    firstName: z.string().min(1, "El nombre es obligatorio").max(100),
+    lastName: z.string().min(1, "El apellido es obligatorio").max(100),
+    nationalId: z.string().max(50).optional(),
+    phoneLocal: z.string().max(20).optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    addressLine: z.string().optional(),
+    country: z.enum(ROUTE_COUNTRY_CODES, {
+      errorMap: () => ({ message: "Selecciona un país" }),
+    }),
+    department: z.string().min(1, "Selecciona un departamento").max(10),
+    city: z.string().min(1, "Selecciona una ciudad").max(100),
+    cityCustom: z.string().max(100).optional(),
+    lat: z.coerce.number().optional(),
+    lng: z.coerce.number().optional(),
+    notes: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.city === OTHER_ROUTE_CITY_VALUE && !data.cityCustom?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Escribe el nombre de la ciudad",
+        path: ["cityCustom"],
+      });
+    }
+  });
 
 export type CreateClientFormValues = z.infer<typeof createClientSchema>;
 
-export const updateClientSchema = z.object({
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  nationalId: z.string().max(50).optional(),
-  phone: z.string().max(30).optional(),
-  email: z.string().email().optional().or(z.literal("")),
-  addressLine: z.string().optional(),
-  city: z.string().max(100).optional(),
-  lat: z.coerce.number().optional(),
-  lng: z.coerce.number().optional(),
-  status: z.enum(CLIENT_STATUSES).optional(),
-  notes: z.string().optional(),
-});
+export type CreateClientPayload = Omit<
+  CreateClientFormValues,
+  "cityCustom" | "phoneLocal"
+> & {
+  city: string;
+  phone?: string;
+};
+
+export function toCreateClientPayload(
+  values: CreateClientFormValues,
+): CreateClientPayload {
+  const { cityCustom, phoneLocal, lat, lng, email, country, department, city, ...rest } =
+    values;
+  return {
+    ...rest,
+    country,
+    department,
+    city: resolveRouteCityValue(city, cityCustom),
+    phone: phoneLocal?.trim()
+      ? formatPhoneWithCountryPrefix(country, phoneLocal)
+      : undefined,
+    email: email || undefined,
+    ...(lat !== undefined && lng !== undefined ? { lat, lng } : {}),
+  };
+}
+
+export const updateClientSchema = z
+  .object({
+    firstName: z.string().min(1).max(100),
+    lastName: z.string().min(1).max(100),
+    nationalId: z.string().max(50).optional(),
+    phoneLocal: z.string().max(20).optional(),
+    email: z.string().email().optional().or(z.literal("")),
+    addressLine: z.string().optional(),
+    country: z
+      .union([z.literal(""), z.enum(ROUTE_COUNTRY_CODES)])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+    department: z
+      .union([z.literal(""), z.string().min(1).max(10)])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+    city: z
+      .union([z.literal(""), z.string().min(1).max(100)])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+    cityCustom: z.string().max(100).optional(),
+    lat: z.coerce.number().optional(),
+    lng: z.coerce.number().optional(),
+    status: z.enum(CLIENT_STATUSES).optional(),
+    notes: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.city === OTHER_ROUTE_CITY_VALUE && !data.cityCustom?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Escribe el nombre de la ciudad",
+        path: ["cityCustom"],
+      });
+    }
+  });
 
 export type UpdateClientFormValues = z.infer<typeof updateClientSchema>;
+
+export type UpdateClientPayload = Omit<
+  UpdateClientFormValues,
+  "cityCustom" | "phoneLocal"
+> & {
+  city?: string;
+  phone?: string;
+};
+
+export function toUpdateClientPayload(
+  values: UpdateClientFormValues,
+): UpdateClientPayload {
+  const { cityCustom, city, phoneLocal, country, ...rest } = values;
+  const payload: UpdateClientPayload = { ...rest };
+  if (city !== undefined) {
+    payload.city = resolveRouteCityValue(city, cityCustom);
+  }
+  if (phoneLocal !== undefined && country) {
+    payload.phone = phoneLocal.trim()
+      ? formatPhoneWithCountryPrefix(country, phoneLocal)
+      : "";
+  }
+  return payload;
+}
 
 export const createRouteSchema = z
   .object({

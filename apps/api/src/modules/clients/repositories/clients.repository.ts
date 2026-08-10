@@ -176,6 +176,8 @@ export class ClientsRepository {
         c.phone,
         c.email,
         c.address_line,
+        c.country,
+        c.department,
         c.city,
         ST_Y(c.current_location::geometry) AS lat,
         ST_X(c.current_location::geometry) AS lng,
@@ -217,6 +219,8 @@ export class ClientsRepository {
         c.phone,
         c.email,
         c.address_line,
+        c.country,
+        c.department,
         c.city,
         ST_Y(c.current_location::geometry) AS lat,
         ST_X(c.current_location::geometry) AS lng,
@@ -233,48 +237,59 @@ export class ClientsRepository {
   }
 
   async createClient(data: {
-    code: string;
     firstName: string;
     lastName: string;
     nationalId?: string;
     phone?: string;
     email?: string;
     addressLine?: string;
-    city?: string;
+    country: string;
+    department: string;
+    city: string;
     location?: GeoPoint;
     notes?: string;
     createdById: string;
   }): Promise<ClientRow> {
-    const params: unknown[] = [
-      data.code,
-      data.firstName,
-      data.lastName,
-      data.nationalId ?? null,
-      data.phone ?? null,
-      data.email ?? null,
-      data.addressLine ?? null,
-      data.city ?? null,
-      data.notes ?? null,
-      data.createdById,
-    ];
+    return this.dataSource.transaction(async (manager) => {
+      const seqResult = await manager.query(
+        `SELECT nextval('client_code_seq') AS seq`,
+      );
+      const seq = Number(seqResult[0]?.seq ?? 1);
+      const code = `CLI-${String(seq).padStart(6, "0")}`;
 
-    let locationSql = "NULL";
-    if (data.location) {
-      locationSql = `ST_SetSRID(ST_MakePoint($11, $12), 4326)::geography`;
-      params.push(data.location.lng, data.location.lat);
-    }
+      const params: unknown[] = [
+        code,
+        data.firstName,
+        data.lastName,
+        data.nationalId ?? null,
+        data.phone ?? null,
+        data.email ?? null,
+        data.addressLine ?? null,
+        data.country,
+        data.department,
+        data.city,
+        data.notes ?? null,
+        data.createdById,
+      ];
 
-    const rows = await this.dataSource.query(
-      `INSERT INTO clients (
-        code, first_name, last_name, national_id, phone, email,
-        address_line, city, current_location, notes, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, ${locationSql}, $9, $10)
-      RETURNING id`,
-      params,
-    );
+      let locationSql = "NULL";
+      if (data.location) {
+        locationSql = `ST_SetSRID(ST_MakePoint($14, $15), 4326)::geography`;
+        params.push(data.location.lng, data.location.lat);
+      }
 
-    const created = await this.findById(rows[0].id as string);
-    return created!;
+      const rows = await manager.query(
+        `INSERT INTO clients (
+          code, first_name, last_name, national_id, phone, email,
+          address_line, country, department, city, current_location, notes, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ${locationSql}, $11, $12)
+        RETURNING id`,
+        params,
+      );
+
+      const created = await this.findById(rows[0].id as string);
+      return created!;
+    });
   }
 
   async updateClient(
@@ -286,6 +301,8 @@ export class ClientsRepository {
       phone: string | null;
       email: string | null;
       addressLine: string | null;
+      country: string | null;
+      department: string | null;
       city: string | null;
       location: GeoPoint | null;
       status: ClientStatus;
@@ -303,6 +320,8 @@ export class ClientsRepository {
       phone: "phone",
       email: "email",
       addressLine: "address_line",
+      country: "country",
+      department: "department",
       city: "city",
       status: "status",
       notes: "notes",

@@ -10,6 +10,8 @@ export interface ClientResponse {
   phone: string | null;
   email: string | null;
   addressLine: string | null;
+  country: string | null;
+  department: string | null;
   city: string | null;
   location: GeoPoint | null;
   status: string;
@@ -32,6 +34,8 @@ export function mapClientRow(row: ClientRow): ClientResponse {
     phone: row.phone,
     email: row.email,
     addressLine: row.address_line,
+    country: row.country,
+    department: row.department,
     city: row.city,
     location: hasLocation ? { lat: Number(row.lat), lng: Number(row.lng) } : null,
     status: row.status,

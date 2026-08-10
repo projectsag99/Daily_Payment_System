@@ -54,7 +54,7 @@ export class ClientsController {
 
   @Post()
   @RequirePermissions("clients:write")
-  @ApiOperation({ summary: "Create client (admin)" })
+  @ApiOperation({ summary: "Create client" })
   create(
     @CurrentUser() user: JwtPayload,
     @Body() dto: CreateClientDto,

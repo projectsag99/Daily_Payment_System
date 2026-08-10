@@ -15,6 +15,8 @@ export interface Client {
   phone: string | null;
   email: string | null;
   addressLine: string | null;
+  country: string | null;
+  department: string | null;
   city: string | null;
   location: GeoPoint | null;
   status: ClientStatus;

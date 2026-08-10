@@ -1,4 +1,4 @@
-import { City, State } from "country-state-city";
+import { City, Country, State } from "country-state-city";
 
 export const ROUTE_COUNTRIES = [
   { code: "CO", name: "Colombia" },
@@ -84,6 +84,42 @@ export function resolveRouteCityValue(
     return cityCustom?.trim() ?? "";
   }
   return city.trim();
+}
+
+export function getCountryPhonePrefix(countryCode: string): string {
+  return Country.getCountryByCode(countryCode)?.phonecode ?? "";
+}
+
+export function formatPhoneWithCountryPrefix(
+  countryCode: string,
+  localNumber: string,
+): string {
+  const prefix = getCountryPhonePrefix(countryCode);
+  const digits = localNumber.replace(/\D/g, "");
+  if (!digits) {
+    return "";
+  }
+  if (!prefix) {
+    return digits.startsWith("+") ? digits : `+${digits}`;
+  }
+  if (digits.startsWith(prefix)) {
+    return `+${digits}`;
+  }
+  return `+${prefix}${digits}`;
+}
+
+export function stripCountryPhonePrefix(
+  phone: string,
+  countryCode?: string,
+): string {
+  const cleaned = phone.replace(/\s/g, "");
+  if (countryCode) {
+    const prefix = getCountryPhonePrefix(countryCode);
+    if (prefix && cleaned.startsWith(`+${prefix}`)) {
+      return cleaned.slice(prefix.length + 1);
+    }
+  }
+  return cleaned.replace(/^\+\d+/, "");
 }
 
 export function routeFormLocationValues(route: {

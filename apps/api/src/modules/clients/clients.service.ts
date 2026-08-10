@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  ConflictException,
   BadRequestException,
 } from "@nestjs/common";
 import { ClientsRepository } from "./repositories/clients.repository";
@@ -29,6 +28,12 @@ import {
 import { mapClientRow, parseNearParam } from "./domain/client.mapper";
 import { ClientAccessContext, isAdminRole } from "./domain/client.types";
 import { ClientDocument } from "./entities/client-document.entity";
+import {
+  formatPhoneWithCountryPrefix,
+  isValidRouteCity,
+  isValidRouteCountryCode,
+  isValidRouteDepartment,
+} from "../routes/domain/route-locations";
 
 @Injectable()
 export class ClientsService {
@@ -116,24 +121,53 @@ export class ClientsService {
     return mapClientRow(row);
   }
 
-  async create(user: JwtPayload, dto: CreateClientDto, ipAddress?: string) {
-    this.assertAdmin(user);
-
-    if (await this.clientsRepository.codeExists(dto.code)) {
-      throw new ConflictException({
+  private assertValidClientLocation(
+    country: string,
+    department: string,
+    city: string,
+  ): void {
+    if (!isValidRouteCountryCode(country)) {
+      throw new BadRequestException({
         code: ApiErrorCode.VALIDATION_ERROR,
-        message: "El código de cliente ya existe",
+        message: "País no válido",
       });
     }
+    if (!isValidRouteDepartment(country, department)) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "Departamento no válido para el país seleccionado",
+      });
+    }
+    if (!isValidRouteCity(country, department, city)) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "Ciudad no válida para el departamento seleccionado",
+      });
+    }
+  }
+
+  private normalizePhone(
+    phone: string | undefined,
+    country: string,
+  ): string | undefined {
+    if (!phone?.trim()) {
+      return undefined;
+    }
+    return formatPhoneWithCountryPrefix(country, phone);
+  }
+
+  async create(user: JwtPayload, dto: CreateClientDto, ipAddress?: string) {
+    this.assertValidClientLocation(dto.country, dto.department, dto.city);
 
     const row = await this.clientsRepository.createClient({
-      code: dto.code,
       firstName: dto.firstName,
       lastName: dto.lastName,
       nationalId: dto.nationalId,
-      phone: dto.phone,
+      phone: this.normalizePhone(dto.phone, dto.country),
       email: dto.email,
       addressLine: dto.addressLine,
+      country: dto.country,
+      department: dto.department,
       city: dto.city,
       location: dto.location,
       notes: dto.notes,
@@ -168,7 +202,20 @@ export class ClientsService {
       });
     }
 
-    const row = await this.clientsRepository.updateClient(clientId, dto);
+    const country = dto.country ?? before.country;
+    const department = dto.department ?? before.department;
+    const city = dto.city ?? before.city;
+
+    if (country && department && city) {
+      this.assertValidClientLocation(country, department, city);
+    }
+
+    const patch: UpdateClientDto = { ...dto };
+    if (dto.phone !== undefined && country) {
+      patch.phone = this.normalizePhone(dto.phone ?? undefined, country) ?? null;
+    }
+
+    const row = await this.clientsRepository.updateClient(clientId, patch);
     if (!row) {
       throw new NotFoundException({
         code: ApiErrorCode.CLIENT_NOT_FOUND,

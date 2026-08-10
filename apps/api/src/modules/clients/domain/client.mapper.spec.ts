@@ -12,6 +12,8 @@ describe("client.mapper", () => {
       phone: "+57300",
       email: null,
       address_line: "Calle 1",
+      country: "CO",
+      department: "DC",
       city: "Bogotá",
       lat: 4.6,
       lng: -74.0,
