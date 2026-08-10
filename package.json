@@ -1,0 +1,31 @@
+{
+  "name": "daily-payment-system",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "migration:run": "pnpm --filter @dps/api migration:run",
+    "migration:revert": "pnpm --filter @dps/api migration:revert",
+    "migration:show": "pnpm --filter @dps/api migration:show",
+    "bootstrap:admin": "pnpm --filter @dps/api bootstrap:admin",
+    "bootstrap:collector": "pnpm --filter @dps/api bootstrap:collector",
+    "reset:db": "pnpm --filter @dps/api reset:db",
+    "web:dev": "pnpm --filter @dps/web dev:clean",
+    "web:build": "pnpm --filter @dps/web build"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

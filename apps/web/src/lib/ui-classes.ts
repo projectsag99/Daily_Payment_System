@@ -1,0 +1,10 @@
+export const inputClass = "input-field";
+export const labelClass = "label-field";
+export const btnPrimary = "btn-primary";
+export const btnSecondary = "btn-secondary";
+export const btnGhost = "btn-ghost";
+export const linkClass = "link-brand";
+export const pageTitle = "page-title";
+export const pageSubtitle = "page-subtitle";
+export const tableShell = "table-shell";
+export const emptyState = "empty-state";
