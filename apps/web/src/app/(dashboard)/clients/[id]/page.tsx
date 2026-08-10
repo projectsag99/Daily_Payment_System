@@ -13,6 +13,7 @@ import {
   RouteLocationFieldsValues,
 } from "@/components/route-location-fields";
 import { LocationPicker } from "@/components/location-picker";
+import { ClientProfileCard } from "@/components/client-profile-card";
 import { ApiError } from "@/lib/api-client";
 import {
   fetchClient,
@@ -169,8 +170,10 @@ export default function ClientDetailPage() {
       {feedback && <Alert variant="success">{feedback}</Alert>}
 
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <ClientProfileCard client={client} />
+
         <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-900">Datos del cliente</h2>
+          <h2 className="mb-4 font-semibold text-slate-900">Editar cliente</h2>
           <form
             onSubmit={handleSubmit((values) => updateMutation.mutate(values))}
             className="space-y-3"

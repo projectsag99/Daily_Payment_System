@@ -33,6 +33,7 @@ interface LocationMapProps {
   zoom: number;
   value: GeoPoint | null;
   onChange: (location: GeoPoint) => void;
+  readOnly?: boolean;
 }
 
 function RecenterMap({
@@ -69,25 +70,35 @@ function ZoomToValue({ value }: { value: GeoPoint | null }) {
 
 function MapClickHandler({
   onChange,
+  readOnly,
 }: {
   onChange: (location: GeoPoint) => void;
+  readOnly?: boolean;
 }) {
   useMapEvents({
     click(event) {
+      if (readOnly) return;
       onChange({ lat: event.latlng.lat, lng: event.latlng.lng });
     },
   });
   return null;
 }
 
-export function LocationMap({ center, zoom, value, onChange }: LocationMapProps) {
+export function LocationMap({
+  center,
+  zoom,
+  value,
+  onChange,
+  readOnly = false,
+}: LocationMapProps) {
   const markerPosition = value ?? center;
 
   return (
     <MapContainer
       center={[markerPosition.lat, markerPosition.lng]}
       zoom={value ? 16 : zoom}
-      scrollWheelZoom
+      scrollWheelZoom={!readOnly}
+      dragging={!readOnly}
       className="h-full w-full rounded-lg"
     >
       <TileLayer
@@ -96,18 +107,22 @@ export function LocationMap({ center, zoom, value, onChange }: LocationMapProps)
       />
       <RecenterMap center={center} value={value} zoom={zoom} />
       <ZoomToValue value={value} />
-      <MapClickHandler onChange={onChange} />
+      <MapClickHandler onChange={onChange} readOnly={readOnly} />
       {value && (
         <Marker
-          draggable
+          draggable={!readOnly}
           position={[value.lat, value.lng]}
-          eventHandlers={{
-            dragend(event) {
-              const marker = event.target;
-              const { lat, lng } = marker.getLatLng();
-              onChange({ lat, lng });
-            },
-          }}
+          eventHandlers={
+            readOnly
+              ? undefined
+              : {
+                  dragend(event) {
+                    const marker = event.target;
+                    const { lat, lng } = marker.getLatLng();
+                    onChange({ lat, lng });
+                  },
+                }
+          }
         />
       )}
     </MapContainer>

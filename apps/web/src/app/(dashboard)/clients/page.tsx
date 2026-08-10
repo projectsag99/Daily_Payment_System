@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
@@ -34,6 +35,7 @@ import {
 import { btnPrimary, btnSecondary, emptyState, inputClass, labelClass, linkClass, pageSubtitle, pageTitle, tableShell } from "@/lib/ui-classes";
 
 export default function ClientsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
@@ -60,6 +62,7 @@ export default function ClientsPage() {
       setFeedback(`Cliente creado correctamente (${client.code}).`);
       setShowCreate(false);
       void queryClient.invalidateQueries({ queryKey: ["clients"] });
+      router.push(`/clients/${client.id}`);
     },
   });
 
@@ -153,8 +156,22 @@ export default function ClientsPage() {
             <tbody className="divide-y divide-slate-100">
               {clients.map((client) => (
                 <tr key={client.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-mono text-xs">{client.code}</td>
-                  <td className="px-4 py-3">{client.fullName}</td>
+                  <td className="px-4 py-3 font-mono text-xs">
+                    <Link
+                      href={`/clients/${client.id}`}
+                      className="text-brand-600 hover:underline"
+                    >
+                      {client.code}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/clients/${client.id}`}
+                      className="font-medium text-brand-700 hover:underline"
+                    >
+                      {client.fullName}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     {CLIENT_STATUS_LABELS[client.status]}
                   </td>
