@@ -19,6 +19,8 @@ if ($confirm -ne "SI") {
 $env:RESET_DB_CONFIRM = "1"
 pnpm reset:db
 pnpm bootstrap:admin
+pnpm bootstrap:collector
 
 Write-Host ""
 Write-Host "Base limpia. Reinicia API y web, luego refresca el navegador." -ForegroundColor Green
+Write-Host "Cobrador de prueba: cobrador@daily-payment.local (ver BOOTSTRAP_COLLECTOR_PASSWORD en .env)" -ForegroundColor Cyan

@@ -97,7 +97,7 @@ async function resetDatabase(): Promise<void> {
     `);
 
     await dataSource.query("COMMIT");
-    console.log("Business data cleared. Run pnpm bootstrap:admin if admin is missing.");
+    console.log("Business data cleared. Run pnpm bootstrap:admin and pnpm bootstrap:collector if needed.");
   } catch (error) {
     await dataSource.query("ROLLBACK");
     throw error;

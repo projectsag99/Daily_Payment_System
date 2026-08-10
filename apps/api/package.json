@@ -16,6 +16,7 @@
     "migration:revert": "pnpm typeorm migration:revert",
     "migration:show": "pnpm typeorm migration:show",
     "bootstrap:admin": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-admin.ts",
+    "bootstrap:collector": "ts-node -r tsconfig-paths/register src/scripts/bootstrap-collector.ts",
     "reset:db": "ts-node -r tsconfig-paths/register src/scripts/reset-database.ts"
   },
   "dependencies": {
