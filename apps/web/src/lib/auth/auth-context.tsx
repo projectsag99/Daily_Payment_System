@@ -35,10 +35,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return Boolean(getAccessToken());
-  });
+  // Always start loading so SSR and the first client render match (avoids hydration errors).
+  const [isLoading, setIsLoading] = useState(true);
 
   const loadUser = useCallback(async () => {
     const token = getAccessToken();
