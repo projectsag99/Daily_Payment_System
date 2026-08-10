@@ -4,16 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm, UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
-import {
-  RouteLocationFields,
-  RouteLocationFieldsValues,
-} from "@/components/route-location-fields";
-import { LocationPicker } from "@/components/location-picker";
-import { ClientProfileCard } from "@/components/client-profile-card";
+import { ClientProfileForm } from "@/components/client-profile-form";
 import { ApiError } from "@/lib/api-client";
 import {
   fetchClient,
@@ -34,7 +29,6 @@ import {
   toUpdateClientPayload,
 } from "@/lib/schemas/auth.schema";
 import {
-  getCountryPhonePrefix,
   routeFormLocationValues,
   stripCountryPhonePrefix,
 } from "@/lib/constants/route-locations";
@@ -118,23 +112,6 @@ export default function ClientDetailPage() {
       : undefined,
   });
 
-  const selectedCountry = watch("country");
-  const selectedDepartment = watch("department");
-  const selectedCity = watch("city");
-  const selectedCityCustom = watch("cityCustom");
-  const lat = watch("lat");
-  const lng = watch("lng");
-  const phonePrefix = selectedCountry
-    ? getCountryPhonePrefix(selectedCountry)
-    : "";
-  const mapLocation =
-    typeof lat === "number" &&
-    typeof lng === "number" &&
-    !Number.isNaN(lat) &&
-    !Number.isNaN(lng)
-      ? { lat, lng }
-      : null;
-
   if (clientQuery.isLoading) {
     return <p className="text-sm text-slate-600">Cargando cliente…</p>;
   }
@@ -170,93 +147,23 @@ export default function ClientDetailPage() {
       {feedback && <Alert variant="success">{feedback}</Alert>}
 
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <ClientProfileCard client={client} />
-
-        <section className="rounded-xl border border-slate-200 bg-white p-5">
-          <h2 className="mb-4 font-semibold text-slate-900">Editar cliente</h2>
-          <form
-            onSubmit={handleSubmit((values) => updateMutation.mutate(values))}
-            className="space-y-3"
-          >
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Input label="Nombre" error={errors.firstName?.message} {...register("firstName")} />
-              <Input label="Apellido" error={errors.lastName?.message} {...register("lastName")} />
-              <Input label="Cédula" {...register("nationalId")} />
-              <div>
-                <label className="mb-1 block text-sm font-medium text-slate-700">
-                  Teléfono
-                </label>
-                <div className="flex">
-                  <span className="inline-flex items-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 px-3 text-sm text-slate-600">
-                    {phonePrefix ? `+${phonePrefix}` : "—"}
-                  </span>
-                  <input
-                    className={`${inputClass} rounded-l-none`}
-                    placeholder={selectedCountry ? "3001234567" : "Selecciona un país"}
-                    disabled={!selectedCountry}
-                    {...register("phoneLocal")}
-                  />
-                </div>
-                {errors.phoneLocal && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phoneLocal.message}</p>
-                )}
-              </div>
-              <Input label="Correo" type="email" {...register("email")} />
-              <Select label="Estado" {...register("status")}>
-                {CLIENT_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {CLIENT_STATUS_LABELS[s]}
-                  </option>
-                ))}
-              </Select>
-              <Input label="Dirección" className="sm:col-span-2" {...register("addressLine")} />
-            </div>
-            <RouteLocationFields
-              register={register as unknown as UseFormRegister<RouteLocationFieldsValues>}
-              watch={watch as unknown as UseFormWatch<RouteLocationFieldsValues>}
-              setValue={setValue as unknown as UseFormSetValue<RouteLocationFieldsValues>}
-              errors={errors as FieldErrors<RouteLocationFieldsValues>}
-              inputClass={inputClass}
-              requireAll={false}
-            />
-            <LocationPicker
-              countryCode={selectedCountry}
-              departmentCode={selectedDepartment}
-              city={selectedCity}
-              cityCustom={selectedCityCustom}
-              value={mapLocation}
-              onChange={(location) => {
-                if (location) {
-                  setValue("lat", location.lat, { shouldDirty: true });
-                  setValue("lng", location.lng, { shouldDirty: true });
-                } else {
-                  setValue("lat", undefined, { shouldDirty: true });
-                  setValue("lng", undefined, { shouldDirty: true });
-                }
-              }}
-            />
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">
-                Notas
-              </label>
-              <textarea rows={2} className={inputClass} {...register("notes")} />
-            </div>
-            {updateMutation.error && (
-              <Alert variant="error">
-                {updateMutation.error instanceof ApiError
-                  ? updateMutation.error.message
-                  : "Error al guardar"}
-              </Alert>
-            )}
-            <button
-              type="submit"
-              disabled={!isDirty || updateMutation.isPending}
-              className={btnPrimary}
-            >
-              {updateMutation.isPending ? "Guardando…" : "Guardar cambios"}
-            </button>
-          </form>
-        </section>
+        <ClientProfileForm
+          client={client}
+          register={register}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          isDirty={isDirty}
+          isSubmitting={updateMutation.isPending}
+          submitError={
+            updateMutation.error instanceof ApiError
+              ? updateMutation.error.message
+              : updateMutation.error
+                ? "Error al guardar"
+                : null
+          }
+          onSubmit={handleSubmit((values) => updateMutation.mutate(values))}
+        />
 
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
