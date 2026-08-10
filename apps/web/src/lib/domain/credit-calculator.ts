@@ -48,15 +48,56 @@ export function computeCreditTerms(
   };
 }
 
+export interface CreateCreditApiPayload {
+  principalAmount: number;
+  totalInstallments: number;
+  installmentAmount: number;
+  startDate: string;
+  interestRate?: number;
+  notes?: string;
+  routeId?: string;
+}
+
 export function creditTermsToCreatePayload(
   terms: CreditTermsPreview,
-  startDate: string,
-) {
+  options: {
+    startDate: string;
+    notes?: string;
+    routeId?: string;
+  },
+): CreateCreditApiPayload {
   return {
     principalAmount: terms.principalAmount,
     totalInstallments: terms.totalInstallments,
     installmentAmount: terms.installmentAmount,
-    startDate,
+    startDate: options.startDate,
     interestRate: terms.interestRate,
+    notes: options.notes,
+    routeId: options.routeId,
   };
+}
+
+export function buildCreateCreditPayload(
+  values: {
+    creditAmount: number;
+    creditInterestPercent: number;
+    creditInstallments: number;
+    creditStartDate: string;
+    notes?: string;
+    routeId?: string;
+  },
+  currency: string,
+): CreateCreditApiPayload {
+  const terms = computeCreditTerms({
+    amount: values.creditAmount,
+    interestPercent: values.creditInterestPercent,
+    totalInstallments: values.creditInstallments,
+    currency,
+  });
+
+  return creditTermsToCreatePayload(terms, {
+    startDate: values.creditStartDate,
+    notes: values.notes,
+    routeId: values.routeId,
+  });
 }

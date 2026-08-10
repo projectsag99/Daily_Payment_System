@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   useForm,
   UseFormRegister,
@@ -12,27 +12,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
 import {
+  CreditFormFields,
+  CreditSummaryPanel,
+} from "@/components/credit-form-fields";
+import {
   RouteLocationFields,
   RouteLocationFieldsValues,
 } from "@/components/route-location-fields";
 import { LocationPicker } from "@/components/location-picker";
 import { ApiError } from "@/lib/api-client";
 import { getCountryPhonePrefix } from "@/lib/constants/route-locations";
-import { getCurrencyForCountry, getCurrencyLabel } from "@/lib/constants/currencies";
+import { getCurrencyForCountry } from "@/lib/constants/currencies";
+import { buildCreateCreditPayload } from "@/lib/domain/credit-calculator";
 import {
-  computeCreditTerms,
-  creditTermsToCreatePayload,
-} from "@/lib/domain/credit-calculator";
-import {
-  CREATE_CLIENT_CREDIT_DEFAULTS,
-  CREATE_CLIENT_INSTALLMENT_PRESETS,
+  CREATE_CREDIT_DEFAULTS,
   CreateClientWithCreditFormValues,
+  CreditTermsFormValues,
   createClientWithCreditSchema,
   toCreateClientPayload,
 } from "@/lib/schemas/auth.schema";
 import { createCredit } from "@/lib/api/credits";
 import { createClient } from "@/lib/api/clients";
-import { formatMoney } from "@/lib/utils/format";
 import { btnPrimary, btnSecondary, inputClass } from "@/lib/ui-classes";
 
 const PERSONAL_FIELDS = [
@@ -67,8 +67,9 @@ export function CreateClientModal({
   const form = useForm<CreateClientWithCreditFormValues>({
     resolver: zodResolver(createClientWithCreditSchema),
     defaultValues: {
-      creditInterestPercent: CREATE_CLIENT_CREDIT_DEFAULTS.creditInterestPercent,
-      creditInstallments: CREATE_CLIENT_CREDIT_DEFAULTS.creditInstallments,
+      creditInterestPercent: CREATE_CREDIT_DEFAULTS.creditInterestPercent,
+      creditInstallments: CREATE_CREDIT_DEFAULTS.creditInstallments,
+      creditStartDate: CREATE_CREDIT_DEFAULTS.creditStartDate(),
     },
   });
 
@@ -81,6 +82,7 @@ export function CreateClientModal({
   const creditAmount = form.watch("creditAmount");
   const creditInterestPercent = form.watch("creditInterestPercent");
   const creditInstallments = form.watch("creditInstallments");
+  const creditStartDate = form.watch("creditStartDate");
 
   const phonePrefix = selectedCountry
     ? getCountryPhonePrefix(selectedCountry)
@@ -96,28 +98,6 @@ export function CreateClientModal({
       ? { lat, lng }
       : null;
 
-  const creditPreview = useMemo(() => {
-    const amount = Number(creditAmount);
-    const interest = Number(creditInterestPercent);
-    const installments = Number(creditInstallments);
-
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0 ||
-      !Number.isFinite(installments) ||
-      installments < 1
-    ) {
-      return null;
-    }
-
-    return computeCreditTerms({
-      amount,
-      interestPercent: Number.isFinite(interest) ? interest : 0,
-      totalInstallments: installments,
-      currency,
-    });
-  }, [creditAmount, creditInterestPercent, creditInstallments, currency]);
-
   async function goToCreditTab() {
     const valid = await form.trigger([...PERSONAL_FIELDS]);
     if (valid) {
@@ -130,18 +110,9 @@ export function CreateClientModal({
     setIsSubmitting(true);
     try {
       const client = await createClient(toCreateClientPayload(values));
-      const terms = computeCreditTerms({
-        amount: values.creditAmount,
-        interestPercent: values.creditInterestPercent,
-        totalInstallments: values.creditInstallments,
-        currency,
-      });
       await createCredit(
         client.id,
-        creditTermsToCreatePayload(
-          terms,
-          new Date().toISOString().slice(0, 10),
-        ),
+        buildCreateCreditPayload(values, currency),
       );
       onSuccess(client);
     } catch (err) {
@@ -297,83 +268,29 @@ export function CreateClientModal({
           </>
         ) : (
           <>
-            <section>
-              <h3 className="mb-3 text-sm font-semibold text-slate-900">
-                Condiciones del crédito
-              </h3>
-              <p className="mb-4 text-sm text-slate-600">
-                Moneda según el país del cliente:{" "}
-                <span className="font-medium">{getCurrencyLabel(currency)}</span>
-              </p>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field
-                  label={`Monto (${currency}) *`}
-                  error={form.formState.errors.creditAmount?.message}
-                >
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    className={inputClass}
-                    placeholder="Ej. 500000"
-                    {...form.register("creditAmount")}
-                  />
-                </Field>
-                <Field
-                  label="Porcentaje de interés (%) *"
-                  error={form.formState.errors.creditInterestPercent?.message}
-                >
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    className={inputClass}
-                    {...form.register("creditInterestPercent")}
-                  />
-                </Field>
-                <Field
-                  label="Número de cuotas *"
-                  className="sm:col-span-2"
-                  error={form.formState.errors.creditInstallments?.message}
-                >
-                  <div className="flex flex-wrap gap-2">
-                    {CREATE_CLIENT_INSTALLMENT_PRESETS.map((preset) => {
-                      const selected = Number(creditInstallments) === preset;
-                      return (
-                        <button
-                          key={preset}
-                          type="button"
-                          onClick={() =>
-                            form.setValue("creditInstallments", preset, {
-                              shouldValidate: true,
-                              shouldDirty: true,
-                            })
-                          }
-                          className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
-                            selected
-                              ? "border-brand-600 bg-brand-50 text-brand-700"
-                              : "border-slate-300 text-slate-700 hover:bg-slate-50"
-                          }`}
-                        >
-                          {preset} cuotas
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <input
-                    type="number"
-                    min="1"
-                    max="3650"
-                    className={`${inputClass} mt-3`}
-                    placeholder="Otro número de cuotas"
-                    {...form.register("creditInstallments")}
-                  />
-                </Field>
-              </div>
-            </section>
+            <CreditFormFields
+              register={
+                form.register as unknown as UseFormRegister<CreditTermsFormValues>
+              }
+              watch={form.watch as unknown as UseFormWatch<CreditTermsFormValues>}
+              setValue={
+                form.setValue as unknown as UseFormSetValue<CreditTermsFormValues>
+              }
+              errors={
+                form.formState.errors as FieldErrors<CreditTermsFormValues>
+              }
+              currency={currency}
+              currencyHint="Moneda según el país del cliente"
+              showNotes={false}
+            />
 
-            <CreditSummary preview={creditPreview} currency={currency} />
+            <CreditSummaryPanel
+              creditAmount={creditAmount}
+              creditInterestPercent={creditInterestPercent}
+              creditInstallments={creditInstallments}
+              creditStartDate={creditStartDate}
+              currency={currency}
+            />
           </>
         )}
 
@@ -411,64 +328,6 @@ export function CreateClientModal({
   );
 }
 
-function CreditSummary({
-  preview,
-  currency,
-}: {
-  preview: ReturnType<typeof computeCreditTerms> | null;
-  currency: string;
-}) {
-  if (!preview) {
-    return (
-      <section className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5">
-        <h3 className="mb-2 text-sm font-semibold text-slate-900">
-          Resumen del crédito
-        </h3>
-        <p className="text-sm text-slate-600">
-          Completa el monto y las cuotas para ver el cálculo automático.
-        </p>
-      </section>
-    );
-  }
-
-  const estimatedTotal = preview.installmentAmount * preview.totalInstallments;
-
-  return (
-    <section className="rounded-xl border border-brand-200 bg-brand-50/40 p-5">
-      <h3 className="mb-4 text-sm font-semibold text-slate-900">
-        Resumen del crédito
-      </h3>
-      <dl className="grid gap-3 sm:grid-cols-2">
-        <SummaryItem
-          label="Monto prestado"
-          value={formatMoney(preview.principalAmount, currency)}
-        />
-        <SummaryItem
-          label={`Interés (${preview.interestRate}%)`}
-          value={formatMoney(preview.interestAmount, currency)}
-        />
-        <SummaryItem
-          label="Total a pagar"
-          value={formatMoney(preview.totalToPay, currency)}
-        />
-        <SummaryItem
-          label="Número de cuotas"
-          value={String(preview.totalInstallments)}
-        />
-        <SummaryItem
-          label="Valor por cuota"
-          value={formatMoney(preview.installmentAmount, currency)}
-          highlight
-        />
-        <SummaryItem
-          label="Total estimado (cuotas × valor)"
-          value={formatMoney(estimatedTotal, currency)}
-        />
-      </dl>
-    </section>
-  );
-}
-
 function TabButton({
   active,
   onClick,
@@ -490,29 +349,6 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function SummaryItem({
-  label,
-  value,
-  highlight,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="rounded-lg bg-white/80 px-3 py-2">
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd
-        className={`mt-0.5 text-sm font-semibold ${
-          highlight ? "text-brand-700" : "text-slate-900"
-        }`}
-      >
-        {value}
-      </dd>
-    </div>
   );
 }
 

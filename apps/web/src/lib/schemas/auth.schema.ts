@@ -66,7 +66,7 @@ export const createClientSchema = z
 
 export type CreateClientFormValues = z.infer<typeof createClientSchema>;
 
-const createClientCreditFieldsSchema = z.object({
+const creditTermsFieldsSchema = z.object({
   creditAmount: z.coerce.number().min(0.01, "Ingresa el monto del crédito"),
   creditInterestPercent: z.coerce
     .number()
@@ -77,21 +77,35 @@ const createClientCreditFieldsSchema = z.object({
     .int("Las cuotas deben ser un número entero")
     .min(1, "Mínimo 1 cuota")
     .max(3650, "Máximo 3650 cuotas"),
+  creditStartDate: z.string().min(1, "Selecciona la fecha del crédito"),
+  notes: z.string().optional(),
+  routeId: z.string().uuid().optional(),
 });
 
+export const creditTermsFormSchema = creditTermsFieldsSchema;
+
+export type CreditTermsFormValues = z.infer<typeof creditTermsFormSchema>;
+
 export const createClientWithCreditSchema =
-  createClientCreditFieldsSchema.and(createClientSchema);
+  creditTermsFieldsSchema.and(createClientSchema);
 
 export type CreateClientWithCreditFormValues = z.infer<
   typeof createClientWithCreditSchema
 >;
 
-export const CREATE_CLIENT_CREDIT_DEFAULTS = {
+export const CREATE_CREDIT_DEFAULTS = {
   creditInterestPercent: 20,
   creditInstallments: 24,
+  creditStartDate: () => new Date().toISOString().slice(0, 10),
 } as const;
 
-export const CREATE_CLIENT_INSTALLMENT_PRESETS = [24, 30] as const;
+export const CREATE_CREDIT_INSTALLMENT_PRESETS = [24, 30] as const;
+
+/** @deprecated Use CREATE_CREDIT_DEFAULTS */
+export const CREATE_CLIENT_CREDIT_DEFAULTS = CREATE_CREDIT_DEFAULTS;
+
+/** @deprecated Use CREATE_CREDIT_INSTALLMENT_PRESETS */
+export const CREATE_CLIENT_INSTALLMENT_PRESETS = CREATE_CREDIT_INSTALLMENT_PRESETS;
 
 export type CreateClientPayload = Omit<
   CreateClientFormValues,
@@ -277,17 +291,21 @@ export const assignCollectorSchema = z.object({
 
 export type AssignCollectorFormValues = z.infer<typeof assignCollectorSchema>;
 
-export const createCreditSchema = z.object({
-  principalAmount: z.coerce.number().min(0.01),
-  totalInstallments: z.coerce.number().int().min(1).max(3650),
-  installmentAmount: z.coerce.number().min(0.01),
-  startDate: z.string().min(1),
-  interestRate: z.coerce.number().min(0).optional(),
-  notes: z.string().optional(),
-  routeId: z.string().uuid().optional(),
-});
+export type CreateCreditApiPayload = {
+  principalAmount: number;
+  totalInstallments: number;
+  installmentAmount: number;
+  startDate: string;
+  interestRate?: number;
+  notes?: string;
+  routeId?: string;
+};
 
-export type CreateCreditFormValues = z.infer<typeof createCreditSchema>;
+/** @deprecated Use creditTermsFormSchema */
+export const createCreditSchema = creditTermsFormSchema;
+
+/** @deprecated Use CreditTermsFormValues */
+export type CreateCreditFormValues = CreditTermsFormValues;
 
 export const regenerateInstallmentsSchema = z.object({
   startDate: z.string().min(1),

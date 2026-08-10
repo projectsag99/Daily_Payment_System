@@ -1,14 +1,12 @@
 import { apiFetch } from "@/lib/api-client";
 import { authHeaders } from "@/lib/api/auth";
-import {
-  CreateCreditFormValues,
-  RegenerateInstallmentsFormValues,
-} from "@/lib/schemas/auth.schema";
+import { RegenerateInstallmentsFormValues } from "@/lib/schemas/auth.schema";
+import { CreateCreditApiPayload } from "@/lib/domain/credit-calculator";
 import { Credit, Installment } from "@/lib/types/credits";
 
 export async function createCredit(
   clientId: string,
-  values: CreateCreditFormValues,
+  values: CreateCreditApiPayload,
 ): Promise<Credit> {
   return apiFetch<Credit>(`/clients/${clientId}/credits`, {
     method: "POST",
