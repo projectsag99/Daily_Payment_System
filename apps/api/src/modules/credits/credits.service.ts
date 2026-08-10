@@ -19,6 +19,16 @@ import {
   roundMoney,
 } from "./domain/installment-schedule";
 import { isAdminRole } from "../clients/domain/client.types";
+import { getCurrencyForCountry } from "../routes/domain/route-currencies";
+
+interface AssignedRouteRow {
+  id: string;
+  name: string;
+  country: string | null;
+  department: string | null;
+  city: string | null;
+  sequence_order: number;
+}
 
 @Injectable()
 export class CreditsService {
@@ -75,6 +85,17 @@ export class CreditsService {
       });
     }
 
+    const assignedRoutes =
+      (await this.clientsRepository.findAssignedRoutes(
+        clientId,
+      )) as AssignedRouteRow[];
+
+    const { routeId, currency } = this.resolveCreditRouteAndCurrency(
+      assignedRoutes,
+      dto.routeId,
+      client.country,
+    );
+
     const schedule = generateDailyInstallmentSchedule(
       dto.startDate,
       dto.totalInstallments,
@@ -83,6 +104,8 @@ export class CreditsService {
 
     const credit = await this.creditsRepository.createCreditWithSchedule({
       clientId,
+      routeId,
+      currency,
       principalAmount: dto.principalAmount,
       interestRate: dto.interestRate,
       totalInstallments: dto.totalInstallments,
@@ -100,6 +123,8 @@ export class CreditsService {
       entityId: credit.id,
       afterState: {
         clientId,
+        routeId,
+        currency,
         principalAmount: dto.principalAmount,
         totalInstallments: dto.totalInstallments,
       },
@@ -133,6 +158,10 @@ export class CreditsService {
       clientId: row.client_id,
       clientName: `${row.first_name} ${row.last_name}`.trim(),
       clientCode: row.client_code,
+      routeId: row.route_id,
+      routeName: row.route_name ?? null,
+      country: row.route_country ?? null,
+      currency: row.currency,
       principalAmount: Number(row.principal_amount),
       interestRate: row.interest_rate ? Number(row.interest_rate) : null,
       totalInstallments: row.total_installments,
@@ -147,6 +176,58 @@ export class CreditsService {
       updatedAt: row.updated_at,
       closedAt: row.closed_at,
     };
+  }
+
+  private resolveCreditRouteAndCurrency(
+    assignedRoutes: AssignedRouteRow[],
+    requestedRouteId: string | undefined,
+    clientCountry: string | null,
+  ): { routeId: string | null; currency: string } {
+    if (assignedRoutes.length === 0) {
+      const currency =
+        (clientCountry && getCurrencyForCountry(clientCountry)) || "COP";
+      return { routeId: null, currency };
+    }
+
+    if (assignedRoutes.length === 1) {
+      const route = assignedRoutes[0];
+      if (requestedRouteId && requestedRouteId !== route.id) {
+        throw new BadRequestException({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: "La ruta seleccionada no corresponde al cliente",
+        });
+      }
+      const currency = this.currencyForRoute(route);
+      return { routeId: route.id, currency };
+    }
+
+    if (!requestedRouteId) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message:
+          "El cliente está en varias rutas. Selecciona la ruta del crédito.",
+      });
+    }
+
+    const route = assignedRoutes.find((r) => r.id === requestedRouteId);
+    if (!route) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "La ruta seleccionada no corresponde al cliente",
+      });
+    }
+
+    return { routeId: route.id, currency: this.currencyForRoute(route) };
+  }
+
+  private currencyForRoute(route: AssignedRouteRow): string {
+    if (route.country) {
+      const currency = getCurrencyForCountry(route.country);
+      if (currency) {
+        return currency;
+      }
+    }
+    return "COP";
   }
 
   async listInstallments(user: JwtPayload, creditId: string) {

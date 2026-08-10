@@ -81,15 +81,18 @@ export default function CreditDetailPage() {
         </h1>
         <p className="text-sm text-slate-600">
           {credit.clientCode} · {CREDIT_STATUS_LABELS[credit.status]}
+          {credit.routeName ? ` · ${credit.routeName}` : ""}
+          {" · "}
+          {credit.currency}
         </p>
       </div>
 
       {feedback && <Alert variant="success">{feedback}</Alert>}
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Principal" value={formatMoney(credit.principalAmount)} />
-        <StatCard label="Pagado" value={formatMoney(credit.totalPaid)} />
-        <StatCard label="Saldo" value={formatMoney(credit.balance)} />
+        <StatCard label="Principal" value={formatMoney(credit.principalAmount, credit.currency)} />
+        <StatCard label="Pagado" value={formatMoney(credit.totalPaid, credit.currency)} />
+        <StatCard label="Saldo" value={formatMoney(credit.balance, credit.currency)} />
         <StatCard
           label="Cuotas"
           value={`${credit.paidInstallments} / ${credit.totalInstallments}`}
@@ -127,8 +130,8 @@ export default function CreditDetailPage() {
                   <tr key={row.id}>
                     <td className="px-3 py-2">{row.installmentNumber}</td>
                     <td className="px-3 py-2">{formatDate(row.dueDate)}</td>
-                    <td className="px-3 py-2">{formatMoney(row.amountDue)}</td>
-                    <td className="px-3 py-2">{formatMoney(row.amountPaid)}</td>
+                    <td className="px-3 py-2">{formatMoney(row.amountDue, credit.currency)}</td>
+                    <td className="px-3 py-2">{formatMoney(row.amountPaid, credit.currency)}</td>
                     <td className="px-3 py-2">{row.status}</td>
                   </tr>
                 ))}

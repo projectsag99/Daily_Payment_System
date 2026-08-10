@@ -47,6 +47,11 @@ export class CreateCreditDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: "Required when client is on multiple routes" })
+  @IsOptional()
+  @IsUUID()
+  routeId?: string;
 }
 
 export class RegenerateInstallmentsDto {

@@ -484,9 +484,35 @@ export class ClientsRepository {
     await this.documentRepository.softDelete(documentId);
   }
 
+  async findAssignedRoutes(clientId: string) {
+    return this.dataSource.query(
+      `SELECT
+        r.id,
+        r.name,
+        r.country,
+        r.department,
+        r.city,
+        rca.sequence_order
+      FROM route_client_assignments rca
+      INNER JOIN routes r ON r.id = rca.route_id
+      WHERE rca.client_id = $1
+        AND r.deleted_at IS NULL
+      ORDER BY rca.sequence_order ASC, r.name ASC`,
+      [clientId],
+    );
+  }
+
   async findInstallmentsByClient(clientId: string) {
     return this.dataSource.query(
-      `SELECT i.id, i.installment_number, i.due_date, i.amount_due, i.amount_paid, i.status, c.id AS credit_id
+      `SELECT
+        i.id,
+        i.installment_number,
+        i.due_date,
+        i.amount_due,
+        i.amount_paid,
+        i.status,
+        c.id AS credit_id,
+        c.currency
        FROM installments i
        INNER JOIN credits c ON c.id = i.credit_id
        WHERE c.client_id = $1 AND c.status = 'active'
@@ -497,10 +523,27 @@ export class ClientsRepository {
 
   async findPaymentsByClient(clientId: string) {
     return this.dataSource.query(
-      `SELECT id, amount, payment_method, status, captured_at, recorded_at
-       FROM payments
-       WHERE client_id = $1
-       ORDER BY recorded_at DESC
+      `SELECT
+        p.id,
+        p.amount,
+        p.payment_method,
+        p.status,
+        p.captured_at,
+        p.recorded_at,
+        COALESCE(
+          (
+            SELECT cr.currency
+            FROM payment_allocations pa
+            INNER JOIN installments i ON i.id = pa.installment_id
+            INNER JOIN credits cr ON cr.id = i.credit_id
+            WHERE pa.payment_id = p.id
+            LIMIT 1
+          ),
+          'COP'
+        ) AS currency
+       FROM payments p
+       WHERE p.client_id = $1
+       ORDER BY p.recorded_at DESC
        LIMIT 50`,
       [clientId],
     );

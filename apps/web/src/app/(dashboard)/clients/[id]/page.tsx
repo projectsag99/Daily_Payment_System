@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
@@ -14,11 +14,11 @@ import {
   fetchClient,
   fetchClientInstallments,
   fetchClientPayments,
+  fetchClientRoutes,
   updateClient,
 } from "@/lib/api/clients";
 import { createCredit } from "@/lib/api/credits";
 import {
-  CLIENT_STATUSES,
   CLIENT_STATUS_LABELS,
 } from "@/lib/constants";
 import {
@@ -32,7 +32,7 @@ import {
   routeFormLocationValues,
   stripCountryPhonePrefix,
 } from "@/lib/constants/route-locations";
-import { formatDate, formatDateTime, formatMoney } from "@/lib/utils/format";
+import { formatDate, formatDateTime, formatMoney, getCurrencyForCountry, getCurrencyLabel } from "@/lib/utils/format";
 
 export default function ClientDetailPage() {
   const params = useParams<{ id: string }>();
@@ -224,8 +224,8 @@ export default function ClientDetailPage() {
                   <tr key={row.id}>
                     <td className="py-2 pr-4">{row.installmentNumber}</td>
                     <td className="py-2 pr-4">{formatDate(row.dueDate)}</td>
-                    <td className="py-2 pr-4">{formatMoney(row.amountDue)}</td>
-                    <td className="py-2 pr-4">{formatMoney(row.amountPaid)}</td>
+                    <td className="py-2 pr-4">{formatMoney(row.amountDue, row.currency)}</td>
+                    <td className="py-2 pr-4">{formatMoney(row.amountPaid, row.currency)}</td>
                     <td className="py-2">{row.status}</td>
                   </tr>
                 ))}
@@ -255,7 +255,7 @@ export default function ClientDetailPage() {
               <tbody className="divide-y divide-slate-100">
                 {paymentsQuery.data?.slice(0, 10).map((row) => (
                   <tr key={row.id}>
-                    <td className="py-2 pr-4">{formatMoney(row.amount)}</td>
+                    <td className="py-2 pr-4">{formatMoney(row.amount, row.currency)}</td>
                     <td className="py-2 pr-4">{row.paymentMethod}</td>
                     <td className="py-2 pr-4">{row.status}</td>
                     <td className="py-2">{formatDateTime(row.recordedAt)}</td>
@@ -269,6 +269,8 @@ export default function ClientDetailPage() {
 
       {showCredit && (
         <CreateCreditModal
+          clientId={clientId}
+          clientCountry={client.country}
           isSubmitting={creditMutation.isPending}
           error={creditMutation.error}
           onClose={() => setShowCredit(false)}
@@ -280,34 +282,97 @@ export default function ClientDetailPage() {
 }
 
 function CreateCreditModal({
+  clientId,
+  clientCountry,
   isSubmitting,
   error,
   onClose,
   onSubmit,
 }: {
+  clientId: string;
+  clientCountry: string | null;
   isSubmitting: boolean;
   error: Error | null;
   onClose: () => void;
   onSubmit: (values: CreateCreditFormValues) => void;
 }) {
+  const routesQuery = useQuery({
+    queryKey: ["client-routes", clientId],
+    queryFn: () => fetchClientRoutes(clientId),
+  });
+
+  const routes = routesQuery.data ?? [];
+  const requiresRouteSelection = routes.length > 1;
+  const singleRoute = routes.length === 1 ? routes[0] : null;
+
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<CreateCreditFormValues>({
     resolver: zodResolver(createCreditSchema),
     defaultValues: {
       startDate: new Date().toISOString().slice(0, 10),
       totalInstallments: 30,
+      routeId: singleRoute?.id,
     },
   });
+
+  const selectedRouteId = watch("routeId");
+  const selectedRoute =
+    routes.find((route) => route.id === selectedRouteId) ?? singleRoute;
+  const currency =
+    selectedRoute?.currency ??
+    (clientCountry
+      ? getCurrencyForCountry(clientCountry) ?? "COP"
+      : "COP");
+
+  useEffect(() => {
+    if (singleRoute) {
+      setValue("routeId", singleRoute.id);
+    }
+  }, [singleRoute, setValue]);
 
   return (
     <Modal title="Nuevo crédito" onClose={onClose} wide>
       <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 sm:grid-cols-2">
-        <Input label="Monto principal *" type="number" step="0.01" error={errors.principalAmount?.message} {...register("principalAmount")} />
+        {routesQuery.isLoading ? (
+          <p className="sm:col-span-2 text-sm text-slate-600">Cargando rutas…</p>
+        ) : requiresRouteSelection ? (
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Ruta *
+            </label>
+            <select
+              className={inputClass}
+              {...register("routeId", { required: true })}
+              onChange={(event) => setValue("routeId", event.target.value)}
+            >
+              <option value="">Selecciona una ruta</option>
+              {routes.map((route) => (
+                <option key={route.id} value={route.id}>
+                  {route.name}
+                  {route.city ? ` · ${route.city}` : ""}
+                </option>
+              ))}
+            </select>
+            {errors.routeId && (
+              <p className="mt-1 text-sm text-red-600">Selecciona la ruta del crédito</p>
+            )}
+          </div>
+        ) : singleRoute ? (
+          <input type="hidden" {...register("routeId")} />
+        ) : null}
+
+        <p className="sm:col-span-2 text-sm text-slate-600">
+          Moneda del crédito: <span className="font-medium">{getCurrencyLabel(currency)}</span>
+        </p>
+
+        <Input label={`Monto principal (${currency}) *`} type="number" step="0.01" error={errors.principalAmount?.message} {...register("principalAmount")} />
         <Input label="Cuotas *" type="number" error={errors.totalInstallments?.message} {...register("totalInstallments")} />
-        <Input label="Valor cuota *" type="number" step="0.01" error={errors.installmentAmount?.message} {...register("installmentAmount")} />
+        <Input label={`Valor cuota (${currency}) *`} type="number" step="0.01" error={errors.installmentAmount?.message} {...register("installmentAmount")} />
         <Input label="Fecha inicio *" type="date" error={errors.startDate?.message} {...register("startDate")} />
         <Input label="Tasa interés" type="number" step="0.0001" {...register("interestRate")} />
         <div className="sm:col-span-2">
@@ -323,7 +388,7 @@ function CreateCreditModal({
         )}
         <div className="flex justify-end gap-2 sm:col-span-2">
           <button type="button" onClick={onClose} className={btnSecondary}>Cancelar</button>
-          <button type="submit" disabled={isSubmitting} className={btnPrimary}>
+          <button type="submit" disabled={isSubmitting || routesQuery.isLoading} className={btnPrimary}>
             {isSubmitting ? "Creando…" : "Crear crédito"}
           </button>
         </div>
@@ -351,19 +416,6 @@ function Input({
       <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
       <input className={inputClass} {...props} />
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-    </div>
-  );
-}
-
-function Select({
-  label,
-  children,
-  ...props
-}: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string }) {
-  return (
-    <div>
-      <label className="mb-1 block text-sm font-medium text-slate-700">{label}</label>
-      <select className={inputClass} {...props}>{children}</select>
     </div>
   );
 }

@@ -34,6 +34,7 @@ import {
   isValidRouteCountryCode,
   isValidRouteDepartment,
 } from "../routes/domain/route-locations";
+import { getCurrencyForCountry } from "../routes/domain/route-currencies";
 
 @Injectable()
 export class ClientsService {
@@ -484,6 +485,7 @@ export class ClientsService {
       amountDue: Number(r.amount_due),
       amountPaid: Number(r.amount_paid),
       status: r.status,
+      currency: r.currency,
     }));
   }
 
@@ -497,6 +499,24 @@ export class ClientsService {
       status: r.status,
       capturedAt: r.captured_at,
       recordedAt: r.recorded_at,
+      currency: r.currency,
+    }));
+  }
+
+  async getAssignedRoutes(user: JwtPayload, clientId: string) {
+    await this.assertAccess(clientId, user);
+    const rows = await this.clientsRepository.findAssignedRoutes(clientId);
+    return rows.map((r: Record<string, unknown>) => ({
+      id: r.id,
+      name: r.name,
+      country: r.country,
+      department: r.department,
+      city: r.city,
+      sequenceOrder: r.sequence_order,
+      currency:
+        r.country && typeof r.country === "string"
+          ? getCurrencyForCountry(r.country)
+          : null,
     }));
   }
 }

@@ -25,6 +25,8 @@ export class CreditsRepository {
       `SELECT
         c.id,
         c.client_id,
+        c.route_id,
+        c.currency,
         c.principal_amount,
         c.interest_rate,
         c.total_installments,
@@ -38,9 +40,12 @@ export class CreditsRepository {
         c.closed_at,
         cl.first_name,
         cl.last_name,
-        cl.code AS client_code
+        cl.code AS client_code,
+        r.country AS route_country,
+        r.name AS route_name
       FROM credits c
       INNER JOIN clients cl ON cl.id = c.client_id
+      LEFT JOIN routes r ON r.id = c.route_id
       WHERE c.id = $1`,
       [creditId],
     );
@@ -49,6 +54,8 @@ export class CreditsRepository {
 
   async createCreditWithSchedule(input: {
     clientId: string;
+    routeId: string | null;
+    currency: string;
     principalAmount: number;
     interestRate?: number;
     totalInstallments: number;
@@ -61,12 +68,14 @@ export class CreditsRepository {
     return this.dataSource.transaction(async (manager) => {
       const creditRows = await manager.query(
         `INSERT INTO credits (
-          client_id, principal_amount, interest_rate, total_installments,
-          installment_amount, start_date, notes, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          client_id, route_id, currency, principal_amount, interest_rate,
+          total_installments, installment_amount, start_date, notes, created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *`,
         [
           input.clientId,
+          input.routeId,
+          input.currency,
           input.principalAmount,
           input.interestRate ?? null,
           input.totalInstallments,

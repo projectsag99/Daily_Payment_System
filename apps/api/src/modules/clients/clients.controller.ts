@@ -127,6 +127,16 @@ export class ClientsController {
   ) {
     return this.clientsService.getPayments(user, id);
   }
+
+  @Get(":id/routes")
+  @RequirePermissions("clients:read")
+  @ApiOperation({ summary: "Routes assigned to client" })
+  routes(
+    @CurrentUser() user: JwtPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+  ) {
+    return this.clientsService.getAssignedRoutes(user, id);
+  }
 }
 
 @ApiTags("client-documents")

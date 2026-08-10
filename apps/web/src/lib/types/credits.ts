@@ -5,6 +5,10 @@ export interface Credit {
   clientId: string;
   clientName: string;
   clientCode: string;
+  routeId: string | null;
+  routeName: string | null;
+  country: string | null;
+  currency: string;
   principalAmount: number;
   interestRate: number | null;
   totalInstallments: number;

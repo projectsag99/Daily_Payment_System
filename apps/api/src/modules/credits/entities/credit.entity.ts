@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { CreditStatus } from "../../../common/constants";
 import { Client } from "../../clients/entities/client.entity";
+import { Route } from "../../routes/entities/route.entity";
 import { User } from "../../users/entities/user.entity";
 
 @Entity("credits")
@@ -22,6 +23,16 @@ export class Credit {
   @ManyToOne(() => Client, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "client_id" })
   client!: Client;
+
+  @Column({ name: "route_id", type: "uuid", nullable: true })
+  routeId!: string | null;
+
+  @ManyToOne(() => Route, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "route_id" })
+  route!: Route | null;
+
+  @Column({ type: "char", length: 3 })
+  currency!: string;
 
   @Column({ name: "principal_amount", type: "decimal", precision: 15, scale: 2 })
   principalAmount!: string;

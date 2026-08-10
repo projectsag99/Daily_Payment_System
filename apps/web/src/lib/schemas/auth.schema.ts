@@ -257,6 +257,7 @@ export const createCreditSchema = z.object({
   startDate: z.string().min(1),
   interestRate: z.coerce.number().min(0).optional(),
   notes: z.string().optional(),
+  routeId: z.string().uuid().optional(),
 });
 
 export type CreateCreditFormValues = z.infer<typeof createCreditSchema>;

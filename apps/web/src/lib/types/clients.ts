@@ -47,6 +47,7 @@ export interface ClientInstallment {
   amountDue: number;
   amountPaid: number;
   status: string;
+  currency: string;
 }
 
 export interface ClientPayment {
@@ -56,4 +57,15 @@ export interface ClientPayment {
   status: string;
   capturedAt: string;
   recordedAt: string;
+  currency: string;
+}
+
+export interface ClientRoute {
+  id: string;
+  name: string;
+  country: string | null;
+  department: string | null;
+  city: string | null;
+  sequenceOrder: number;
+  currency: string | null;
 }

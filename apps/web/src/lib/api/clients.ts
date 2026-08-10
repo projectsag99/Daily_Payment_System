@@ -9,6 +9,7 @@ import {
   Client,
   ClientInstallment,
   ClientPayment,
+  ClientRoute,
   PaginatedClients,
 } from "@/lib/types/clients";
 
@@ -100,6 +101,15 @@ export async function fetchClientPayments(
 ): Promise<ClientPayment[]> {
   return apiFetch<ClientPayment[]>(
     `/clients/${clientId}/payments`,
+    authHeaders(),
+  );
+}
+
+export async function fetchClientRoutes(
+  clientId: string,
+): Promise<ClientRoute[]> {
+  return apiFetch<ClientRoute[]>(
+    `/clients/${clientId}/routes`,
     authHeaders(),
   );
 }
