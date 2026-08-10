@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { computeCreditTerms } from "@/lib/domain/credit-calculator";
 import {
   CLIENT_STATUSES,
   NOTIFY_CHANNELS,
@@ -66,21 +67,47 @@ export const createClientSchema = z
 
 export type CreateClientFormValues = z.infer<typeof createClientSchema>;
 
-const creditTermsFieldsSchema = z.object({
-  creditAmount: z.coerce.number().min(0.01, "Ingresa el monto del crédito"),
-  creditInterestPercent: z.coerce
-    .number()
-    .min(0, "El porcentaje no puede ser negativo")
-    .max(100, "El porcentaje no puede superar 100"),
-  creditInstallments: z.coerce
-    .number()
-    .int("Las cuotas deben ser un número entero")
-    .min(1, "Mínimo 1 cuota")
-    .max(3650, "Máximo 3650 cuotas"),
-  creditStartDate: z.string().min(1, "Selecciona la fecha del crédito"),
-  notes: z.string().optional(),
-  routeId: z.string().uuid().optional(),
-});
+const creditTermsFieldsSchema = z
+  .object({
+    creditAmount: z.coerce.number().min(0.01, "Ingresa el monto del crédito"),
+    creditInterestPercent: z.coerce
+      .number()
+      .min(0, "El porcentaje no puede ser negativo")
+      .max(100, "El porcentaje no puede superar 100"),
+    creditInstallments: z.coerce
+      .number()
+      .int("Las cuotas deben ser un número entero")
+      .min(1, "Mínimo 1 cuota")
+      .max(3650, "Máximo 3650 cuotas"),
+    creditStartDate: z.string().min(1, "Selecciona la fecha del crédito"),
+    creditAmountAlreadyPaid: z.coerce
+      .number()
+      .min(0, "El saldo pagado no puede ser negativo")
+      .optional(),
+    notes: z.string().optional(),
+    routeId: z.string().uuid().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const paid = data.creditAmountAlreadyPaid ?? 0;
+    if (paid <= 0) {
+      return;
+    }
+
+    const terms = computeCreditTerms({
+      amount: data.creditAmount,
+      interestPercent: data.creditInterestPercent,
+      totalInstallments: data.creditInstallments,
+      amountAlreadyPaid: paid,
+    });
+
+    if (paid > terms.totalToPay) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "El saldo pagado no puede superar el total a pagar",
+        path: ["creditAmountAlreadyPaid"],
+      });
+    }
+  });
 
 export const creditTermsFormSchema = creditTermsFieldsSchema;
 
@@ -96,6 +123,7 @@ export type CreateClientWithCreditFormValues = z.infer<
 export const CREATE_CREDIT_DEFAULTS = {
   creditInterestPercent: 20,
   creditInstallments: 24,
+  creditAmountAlreadyPaid: 0,
   creditStartDate: () => new Date().toISOString().slice(0, 10),
 } as const;
 
@@ -290,16 +318,6 @@ export const assignCollectorSchema = z.object({
 });
 
 export type AssignCollectorFormValues = z.infer<typeof assignCollectorSchema>;
-
-export type CreateCreditApiPayload = {
-  principalAmount: number;
-  totalInstallments: number;
-  installmentAmount: number;
-  startDate: string;
-  interestRate?: number;
-  notes?: string;
-  routeId?: string;
-};
 
 /** @deprecated Use creditTermsFormSchema */
 export const createCreditSchema = creditTermsFormSchema;

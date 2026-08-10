@@ -89,6 +89,19 @@ export function CreditFormFields({
             />
           </Field>
           <Field
+            label={`Saldo ya pagado (${currency})`}
+            error={errors.creditAmountAlreadyPaid?.message}
+          >
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className={inputClass}
+              placeholder="0"
+              {...register("creditAmountAlreadyPaid")}
+            />
+          </Field>
+          <Field
             label="Número de cuotas *"
             className="sm:col-span-2"
             error={errors.creditInstallments?.message}
@@ -146,18 +159,21 @@ export function CreditSummaryPanel({
   creditInterestPercent,
   creditInstallments,
   creditStartDate,
+  creditAmountAlreadyPaid,
   currency,
 }: {
   creditAmount: unknown;
   creditInterestPercent: unknown;
   creditInstallments: unknown;
   creditStartDate?: unknown;
+  creditAmountAlreadyPaid?: unknown;
   currency: string;
 }) {
   const preview = useMemo(() => {
     const amount = Number(creditAmount);
     const interest = Number(creditInterestPercent);
     const installments = Number(creditInstallments);
+    const alreadyPaid = Number(creditAmountAlreadyPaid);
 
     if (
       !Number.isFinite(amount) ||
@@ -172,9 +188,16 @@ export function CreditSummaryPanel({
       amount,
       interestPercent: Number.isFinite(interest) ? interest : 0,
       totalInstallments: installments,
+      amountAlreadyPaid: Number.isFinite(alreadyPaid) ? alreadyPaid : 0,
       currency,
     });
-  }, [creditAmount, creditInterestPercent, creditInstallments, currency]);
+  }, [
+    creditAmount,
+    creditInterestPercent,
+    creditInstallments,
+    creditAmountAlreadyPaid,
+    currency,
+  ]);
 
   if (!preview) {
     return (
@@ -217,6 +240,19 @@ export function CreditSummaryPanel({
           label="Total a pagar"
           value={formatMoney(preview.totalToPay, currency)}
         />
+        {preview.amountAlreadyPaid > 0 && (
+          <>
+            <SummaryItem
+              label="Saldo ya pagado"
+              value={formatMoney(preview.amountAlreadyPaid, currency)}
+            />
+            <SummaryItem
+              label="Saldo pendiente"
+              value={formatMoney(preview.remainingBalance, currency)}
+              highlight
+            />
+          </>
+        )}
         <SummaryItem
           label="Número de cuotas"
           value={String(preview.totalInstallments)}

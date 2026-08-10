@@ -16,6 +16,7 @@ import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
 import { CreateCreditDto, RegenerateInstallmentsDto } from "./dto/credits.dto";
 import {
   generateDailyInstallmentSchedule,
+  applyInitialPaymentToSchedule,
   roundMoney,
 } from "./domain/installment-schedule";
 import { isAdminRole } from "../clients/domain/client.types";
@@ -96,11 +97,24 @@ export class CreditsService {
       client.country,
     );
 
-    const schedule = generateDailyInstallmentSchedule(
-      dto.startDate,
-      dto.totalInstallments,
-      dto.installmentAmount,
+    const schedule = applyInitialPaymentToSchedule(
+      generateDailyInstallmentSchedule(
+        dto.startDate,
+        dto.totalInstallments,
+        dto.installmentAmount,
+      ),
+      dto.amountAlreadyPaid ?? 0,
     );
+
+    const totalDue = roundMoney(
+      dto.installmentAmount * dto.totalInstallments,
+    );
+    if ((dto.amountAlreadyPaid ?? 0) > totalDue) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "El saldo pagado no puede superar el total del crédito",
+      });
+    }
 
     const credit = await this.creditsRepository.createCreditWithSchedule({
       clientId,

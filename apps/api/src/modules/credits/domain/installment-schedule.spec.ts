@@ -1,5 +1,6 @@
 import {
   generateDailyInstallmentSchedule,
+  applyInitialPaymentToSchedule,
   computeInstallmentStatus,
   addDaysToDate,
 } from "./installment-schedule";
@@ -26,5 +27,27 @@ describe("installment-schedule", () => {
     expect(computeInstallmentStatus(100, 0, "2026-07-01", "2026-08-05")).toBe(
       "overdue",
     );
+  });
+
+  it("applies initial payment across installments in order", () => {
+    const schedule = generateDailyInstallmentSchedule("2026-08-01", 4, 100);
+    const withPayment = applyInitialPaymentToSchedule(schedule, 250);
+
+    expect(withPayment[0]).toMatchObject({
+      amountPaid: 100,
+      status: "paid",
+    });
+    expect(withPayment[1]).toMatchObject({
+      amountPaid: 100,
+      status: "paid",
+    });
+    expect(withPayment[2]).toMatchObject({
+      amountPaid: 50,
+      status: "partial",
+    });
+    expect(withPayment[3]).toMatchObject({
+      amountPaid: 0,
+      status: "pending",
+    });
   });
 });

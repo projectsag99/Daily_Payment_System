@@ -48,6 +48,13 @@ export class CreateCreditDto {
   @IsString()
   notes?: string;
 
+  @ApiPropertyOptional({ description: "Amount already paid before registering the credit" })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  amountAlreadyPaid?: number;
+
   @ApiPropertyOptional({ description: "Required when client is on multiple routes" })
   @IsOptional()
   @IsUUID()

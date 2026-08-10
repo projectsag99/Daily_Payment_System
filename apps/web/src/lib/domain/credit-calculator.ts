@@ -4,6 +4,7 @@ export interface CreditTermsInput {
   amount: number;
   interestPercent: number;
   totalInstallments: number;
+  amountAlreadyPaid?: number;
   currency?: string;
 }
 
@@ -12,6 +13,8 @@ export interface CreditTermsPreview {
   interestRate: number;
   interestAmount: number;
   totalToPay: number;
+  amountAlreadyPaid: number;
+  remainingBalance: number;
   totalInstallments: number;
   installmentAmount: number;
 }
@@ -38,11 +41,26 @@ export function computeCreditTerms(
       ? Math.ceil(rawInstallment)
       : roundMoney(rawInstallment, fractionDigits);
 
+  const estimatedTotal = roundMoney(
+    installmentAmount * input.totalInstallments,
+    fractionDigits,
+  );
+  const amountAlreadyPaid = roundMoney(
+    Math.max(0, input.amountAlreadyPaid ?? 0),
+    fractionDigits,
+  );
+  const remainingBalance = roundMoney(
+    Math.max(0, estimatedTotal - amountAlreadyPaid),
+    fractionDigits,
+  );
+
   return {
     principalAmount,
     interestRate,
     interestAmount,
-    totalToPay,
+    totalToPay: estimatedTotal,
+    amountAlreadyPaid,
+    remainingBalance,
     totalInstallments: input.totalInstallments,
     installmentAmount,
   };
@@ -54,6 +72,7 @@ export interface CreateCreditApiPayload {
   installmentAmount: number;
   startDate: string;
   interestRate?: number;
+  amountAlreadyPaid?: number;
   notes?: string;
   routeId?: string;
 }
@@ -62,6 +81,7 @@ export function creditTermsToCreatePayload(
   terms: CreditTermsPreview,
   options: {
     startDate: string;
+    amountAlreadyPaid?: number;
     notes?: string;
     routeId?: string;
   },
@@ -72,6 +92,7 @@ export function creditTermsToCreatePayload(
     installmentAmount: terms.installmentAmount,
     startDate: options.startDate,
     interestRate: terms.interestRate,
+    amountAlreadyPaid: options.amountAlreadyPaid,
     notes: options.notes,
     routeId: options.routeId,
   };
@@ -83,20 +104,28 @@ export function buildCreateCreditPayload(
     creditInterestPercent: number;
     creditInstallments: number;
     creditStartDate: string;
+    creditAmountAlreadyPaid?: number;
     notes?: string;
     routeId?: string;
   },
   currency: string,
 ): CreateCreditApiPayload {
+  const amountAlreadyPaid = values.creditAmountAlreadyPaid ?? 0;
   const terms = computeCreditTerms({
     amount: values.creditAmount,
     interestPercent: values.creditInterestPercent,
     totalInstallments: values.creditInstallments,
+    amountAlreadyPaid,
     currency,
   });
 
+  if (amountAlreadyPaid > terms.totalToPay) {
+    throw new Error("PAID_EXCEEDS_TOTAL");
+  }
+
   return creditTermsToCreatePayload(terms, {
     startDate: values.creditStartDate,
+    amountAlreadyPaid: amountAlreadyPaid > 0 ? amountAlreadyPaid : undefined,
     notes: values.notes,
     routeId: values.routeId,
   });

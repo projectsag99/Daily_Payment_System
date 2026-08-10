@@ -50,6 +50,7 @@ export function CreateCreditModal({
     defaultValues: {
       creditInterestPercent: CREATE_CREDIT_DEFAULTS.creditInterestPercent,
       creditInstallments: CREATE_CREDIT_DEFAULTS.creditInstallments,
+      creditAmountAlreadyPaid: CREATE_CREDIT_DEFAULTS.creditAmountAlreadyPaid,
       creditStartDate: CREATE_CREDIT_DEFAULTS.creditStartDate(),
     },
   });
@@ -65,6 +66,7 @@ export function CreateCreditModal({
   const creditInterestPercent = form.watch("creditInterestPercent");
   const creditInstallments = form.watch("creditInstallments");
   const creditStartDate = form.watch("creditStartDate");
+  const creditAmountAlreadyPaid = form.watch("creditAmountAlreadyPaid");
 
   useEffect(() => {
     if (singleRoute) {
@@ -140,6 +142,7 @@ export function CreateCreditModal({
           creditInterestPercent={creditInterestPercent}
           creditInstallments={creditInstallments}
           creditStartDate={creditStartDate}
+          creditAmountAlreadyPaid={creditAmountAlreadyPaid}
           currency={currency}
         />
 

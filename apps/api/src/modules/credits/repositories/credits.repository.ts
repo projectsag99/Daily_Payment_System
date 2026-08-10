@@ -91,9 +91,16 @@ export class CreditsRepository {
       for (const item of input.schedule) {
         await manager.query(
           `INSERT INTO installments (
-            credit_id, installment_number, due_date, amount_due
-          ) VALUES ($1, $2, $3, $4)`,
-          [credit.id, item.installmentNumber, item.dueDate, item.amountDue],
+            credit_id, installment_number, due_date, amount_due, amount_paid, status
+          ) VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            credit.id,
+            item.installmentNumber,
+            item.dueDate,
+            item.amountDue,
+            item.amountPaid ?? 0,
+            item.status ?? "pending",
+          ],
         );
       }
 

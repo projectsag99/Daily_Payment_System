@@ -2,6 +2,36 @@ export interface InstallmentScheduleItem {
   installmentNumber: number;
   dueDate: string;
   amountDue: number;
+  amountPaid?: number;
+  status?: "pending" | "partial" | "paid";
+}
+
+export function applyInitialPaymentToSchedule(
+  schedule: InstallmentScheduleItem[],
+  amountAlreadyPaid: number,
+): InstallmentScheduleItem[] {
+  if (amountAlreadyPaid <= 0) {
+    return schedule.map((item) => ({
+      ...item,
+      amountPaid: 0,
+      status: "pending" as const,
+    }));
+  }
+
+  let remaining = roundMoney(amountAlreadyPaid);
+
+  return schedule.map((item) => {
+    if (remaining <= 0) {
+      return { ...item, amountPaid: 0, status: "pending" as const };
+    }
+
+    const paid = roundMoney(Math.min(remaining, item.amountDue));
+    remaining = roundMoney(remaining - paid);
+    const status =
+      paid >= item.amountDue ? "paid" : paid > 0 ? "partial" : "pending";
+
+    return { ...item, amountPaid: paid, status };
+  });
 }
 
 export function addDaysToDate(dateStr: string, days: number): string {
