@@ -20,6 +20,7 @@ import {
 import {
   CreateClientDto,
   ListClientsQueryDto,
+  ReplaceClientRoutesDto,
   UpdateClientDto,
   UpdateClientLocationDto,
   ConfirmDocumentDto,
@@ -528,5 +529,51 @@ export class ClientsService {
           ? getCurrencyForCountry(r.country)
           : null,
     }));
+  }
+
+  async replaceClientRoutes(
+    user: JwtPayload,
+    clientId: string,
+    dto: ReplaceClientRoutesDto,
+    ipAddress?: string,
+  ) {
+    this.assertAdmin(user);
+
+    const client = await this.clientsRepository.findById(clientId);
+    if (!client) {
+      throw new NotFoundException({
+        code: ApiErrorCode.CLIENT_NOT_FOUND,
+        message: "Cliente no encontrado",
+      });
+    }
+
+    const uniqueRouteIds = [...new Set(dto.routeIds)];
+    for (const routeId of uniqueRouteIds) {
+      const exists = await this.clientsRepository.routeExists(routeId);
+      if (!exists) {
+        throw new NotFoundException({
+          code: ApiErrorCode.ROUTE_NOT_FOUND,
+          message: "Ruta no encontrada",
+        });
+      }
+    }
+
+    const beforeRows = await this.clientsRepository.findAssignedRoutes(clientId);
+    await this.clientsRepository.replaceClientRoutes(clientId, uniqueRouteIds);
+
+    await this.auditService.log({
+      actorId: user.sub,
+      action: AuditAction.UPDATE,
+      entityType: "client",
+      entityId: clientId,
+      beforeState: {
+        routeIds: beforeRows.map((r: { id: string }) => r.id),
+      },
+      afterState: { routeIds: uniqueRouteIds },
+      metadata: { action: "replace_route_assignments" },
+      ipAddress: ipAddress ?? null,
+    });
+
+    return this.getAssignedRoutes(user, clientId);
   }
 }

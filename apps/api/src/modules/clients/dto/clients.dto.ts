@@ -1,5 +1,6 @@
 import { Type } from "class-transformer";
 import {
+  IsArray,
   IsBoolean,
   IsEmail,
   IsEnum,
@@ -90,6 +91,13 @@ export class CreateClientDto {
   @ApiProperty({ description: "Route to assign the new client to" })
   @IsUUID()
   routeId!: string;
+}
+
+export class ReplaceClientRoutesDto {
+  @ApiProperty({ type: [String], description: "Route IDs the client should belong to" })
+  @IsArray()
+  @IsUUID("4", { each: true })
+  routeIds!: string[];
 }
 
 export class UpdateClientDto {

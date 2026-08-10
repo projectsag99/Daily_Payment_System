@@ -502,6 +502,42 @@ export class ClientsRepository {
     );
   }
 
+  async replaceClientRoutes(clientId: string, routeIds: string[]): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      if (routeIds.length === 0) {
+        await manager.query(
+          `DELETE FROM route_client_assignments WHERE client_id = $1`,
+          [clientId],
+        );
+        return;
+      }
+
+      await manager.query(
+        `DELETE FROM route_client_assignments
+         WHERE client_id = $1
+           AND route_id != ALL($2::uuid[])`,
+        [clientId, routeIds],
+      );
+
+      for (const routeId of routeIds) {
+        const existing = await manager.query(
+          `SELECT 1 FROM route_client_assignments
+           WHERE client_id = $1 AND route_id = $2`,
+          [clientId, routeId],
+        );
+        if (existing.length === 0) {
+          await manager.query(
+            `INSERT INTO route_client_assignments (route_id, client_id, sequence_order)
+             SELECT $1, $2, COALESCE(MAX(sequence_order), 0) + 1
+             FROM route_client_assignments
+             WHERE route_id = $1`,
+            [routeId, clientId],
+          );
+        }
+      }
+    });
+  }
+
   async findAssignedRoutes(clientId: string) {
     return this.dataSource.query(
       `SELECT

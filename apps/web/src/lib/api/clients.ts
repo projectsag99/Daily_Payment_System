@@ -113,3 +113,14 @@ export async function fetchClientRoutes(
     authHeaders(),
   );
 }
+
+export async function replaceClientRoutes(
+  clientId: string,
+  routeIds: string[],
+): Promise<ClientRoute[]> {
+  return apiFetch<ClientRoute[]>(`/clients/${clientId}/routes`, {
+    method: "PUT",
+    body: JSON.stringify({ routeIds }),
+    ...authHeaders(),
+  });
+}

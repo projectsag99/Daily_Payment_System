@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { ClientProfileForm } from "@/components/client-profile-form";
+import { ClientRoutesSection } from "@/components/client-routes-section";
 import { CreateCreditModal } from "@/components/create-credit-modal";
 import { ApiError } from "@/lib/api-client";
 import {
@@ -139,23 +140,26 @@ export default function ClientDetailPage() {
       {feedback && <Alert variant="success">{feedback}</Alert>}
 
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
-        <ClientProfileForm
-          client={client}
-          register={register}
-          watch={watch}
-          setValue={setValue}
-          errors={errors}
-          isDirty={isDirty}
-          isSubmitting={updateMutation.isPending}
-          submitError={
-            updateMutation.error instanceof ApiError
-              ? updateMutation.error.message
-              : updateMutation.error
-                ? "Error al guardar"
-                : null
-          }
-          onSubmit={handleSubmit((values) => updateMutation.mutate(values))}
-        />
+        <div className="space-y-6">
+          <ClientProfileForm
+            client={client}
+            register={register}
+            watch={watch}
+            setValue={setValue}
+            errors={errors}
+            isDirty={isDirty}
+            isSubmitting={updateMutation.isPending}
+            submitError={
+              updateMutation.error instanceof ApiError
+                ? updateMutation.error.message
+                : updateMutation.error
+                  ? "Error al guardar"
+                  : null
+            }
+            onSubmit={handleSubmit((values) => updateMutation.mutate(values))}
+          />
+          <ClientRoutesSection clientId={clientId} />
+        </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">

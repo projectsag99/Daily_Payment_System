@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   ParseUUIDPipe,
@@ -17,6 +18,7 @@ import {
   ConfirmDocumentDto,
   CreateClientDto,
   ListClientsQueryDto,
+  ReplaceClientRoutesDto,
   UpdateClientDto,
   UpdateClientLocationDto,
   UploadUrlRequestDto,
@@ -136,6 +138,18 @@ export class ClientsController {
     @Param("id", ParseUUIDPipe) id: string,
   ) {
     return this.clientsService.getAssignedRoutes(user, id);
+  }
+
+  @Put(":id/routes")
+  @RequirePermissions("clients:write")
+  @ApiOperation({ summary: "Replace client route assignments" })
+  replaceRoutes(
+    @CurrentUser() user: JwtPayload,
+    @Param("id", ParseUUIDPipe) id: string,
+    @Body() dto: ReplaceClientRoutesDto,
+    @Req() req: Request,
+  ) {
+    return this.clientsService.replaceClientRoutes(user, id, dto, req.ip);
   }
 }
 
