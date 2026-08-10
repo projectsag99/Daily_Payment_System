@@ -16,14 +16,15 @@ import { Type } from "class-transformer";
 import { ShiftType } from "../../../common/constants";
 
 export class CreateRouteDto {
-  @ApiProperty({ example: "Ruta Centro - Mañana" })
+  @ApiProperty({ example: "Ruta Centro" })
   @IsString()
   @MaxLength(100)
   name!: string;
 
-  @ApiProperty({ enum: ShiftType })
+  @ApiPropertyOptional({ enum: ShiftType, default: ShiftType.MORNING })
+  @IsOptional()
   @IsEnum(ShiftType)
-  shift!: ShiftType;
+  shift?: ShiftType;
 
   @ApiPropertyOptional({ description: "0=Sun … 6=Sat, null=all days" })
   @IsOptional()
@@ -37,6 +38,11 @@ export class CreateRouteDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ description: "Active collector to assign from today" })
+  @IsOptional()
+  @IsUUID()
+  collectorId?: string;
 }
 
 export class UpdateRouteDto {

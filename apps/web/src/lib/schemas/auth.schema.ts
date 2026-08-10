@@ -64,13 +64,12 @@ export const updateClientSchema = z.object({
 export type UpdateClientFormValues = z.infer<typeof updateClientSchema>;
 
 export const createRouteSchema = z.object({
-  name: z.string().min(1).max(100),
-  shift: z.enum(SHIFT_TYPES),
-  dayOfWeek: z
-    .union([z.literal(""), z.coerce.number().min(0).max(6)])
+  name: z.string().min(1, "El nombre es obligatorio").max(100),
+  description: z.string().optional(),
+  collectorId: z
+    .union([z.literal(""), z.string().uuid("Selecciona un cobrador válido")])
     .optional()
     .transform((v) => (v === "" || v === undefined ? undefined : v)),
-  description: z.string().optional(),
 });
 
 export type CreateRouteFormValues = z.infer<typeof createRouteSchema>;

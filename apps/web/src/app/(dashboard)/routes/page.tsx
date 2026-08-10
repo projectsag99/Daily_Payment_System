@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
 import { ApiError } from "@/lib/api-client";
+import { fetchActiveCollectors } from "@/lib/api/collectors";
 import { createRoute, fetchRoutes } from "@/lib/api/routes";
 import {
   DAY_LABELS,
@@ -173,10 +174,16 @@ function CreateRouteModal({
   onClose: () => void;
   onSubmit: (values: CreateRouteFormValues) => void;
 }) {
+  const collectorsQuery = useQuery({
+    queryKey: ["collectors-active"],
+    queryFn: fetchActiveCollectors,
+  });
+
   const { register, handleSubmit, formState: { errors } } = useForm<CreateRouteFormValues>({
     resolver: zodResolver(createRouteSchema),
-    defaultValues: { shift: "morning" },
   });
+
+  const collectors = collectorsQuery.data ?? [];
 
   return (
     <Modal title="Nueva ruta" onClose={onClose}>
@@ -187,21 +194,25 @@ function CreateRouteModal({
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium">Turno *</label>
-          <select className={inputClass} {...register("shift")}>
-            {SHIFT_TYPES.map((s) => (
-              <option key={s} value={s}>{SHIFT_LABELS[s]}</option>
+          <label className="mb-1 block text-sm font-medium">Cobrador responsable</label>
+          <select className={inputClass} {...register("collectorId")} disabled={collectorsQuery.isLoading}>
+            <option value="">
+              {collectorsQuery.isLoading ? "Cargando cobradores…" : "Sin asignar (puedes hacerlo después)"}
+            </option>
+            {collectors.map((c) => (
+              <option key={c.userId} value={c.userId}>
+                {c.firstName} {c.lastName}
+              </option>
             ))}
           </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium">Día (opcional)</label>
-          <select className={inputClass} {...register("dayOfWeek")}>
-            <option value="">Todos los días</option>
-            {DAY_LABELS.map((label, i) => (
-              <option key={label} value={i}>{label}</option>
-            ))}
-          </select>
+          {errors.collectorId && (
+            <p className="mt-1 text-sm text-red-600">{errors.collectorId.message}</p>
+          )}
+          {!collectorsQuery.isLoading && collectors.length === 0 && (
+            <p className="mt-1 text-xs text-slate-500">
+              No hay cobradores activos. Puedes asignar uno después desde la ruta.
+            </p>
+          )}
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Descripción</label>

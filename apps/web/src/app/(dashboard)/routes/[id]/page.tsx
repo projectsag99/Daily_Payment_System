@@ -208,37 +208,48 @@ export default function RouteDetailPage() {
 
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Cobradores asignados</h2>
+            <h2 className="font-semibold">Cobrador responsable</h2>
             <button type="button" onClick={() => setShowAssign(true)} className={btnSecondary}>
-              Asignar
+              {(collectorsQuery.data ?? []).length > 0 ? "Cambiar" : "Asignar"}
             </button>
           </div>
-          {(collectorsQuery.data ?? []).length === 0 ? (
-            <p className="text-sm text-slate-600">Sin asignaciones.</p>
+          {route.assignedCollector ? (
+            <div className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-3">
+              <p className="font-medium text-slate-900">{route.assignedCollector.name}</p>
+              <p className="mt-0.5 text-xs text-slate-500">Asignación vigente hoy</p>
+            </div>
           ) : (
-            <ul className="space-y-2 text-sm">
-              {collectorsQuery.data?.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
-                >
-                  <div>
-                    <p className="font-medium">{a.collectorName}</p>
-                    <p className="text-xs text-slate-500">
-                      {formatDate(a.effectiveFrom)}
-                      {a.effectiveTo ? ` → ${formatDate(a.effectiveTo)}` : " → indefinido"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => removeCollectorMutation.mutate(a.id)}
-                    className="text-red-600 hover:underline"
+            <p className="text-sm text-slate-600">Sin cobrador asignado.</p>
+          )}
+          {(collectorsQuery.data ?? []).length > 0 && (
+            <div className="mt-4">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                Historial de asignaciones
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {collectorsQuery.data?.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2"
                   >
-                    Quitar
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div>
+                      <p className="font-medium">{a.collectorName}</p>
+                      <p className="text-xs text-slate-500">
+                        {formatDate(a.effectiveFrom)}
+                        {a.effectiveTo ? ` → ${formatDate(a.effectiveTo)}` : " → indefinido"}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCollectorMutation.mutate(a.id)}
+                      className="text-red-600 hover:underline"
+                    >
+                      Quitar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
       </div>
@@ -308,6 +319,7 @@ export default function RouteDetailPage() {
           collectors={activeCollectorsQuery.data ?? []}
           isSubmitting={assignMutation.isPending}
           error={assignMutation.error}
+          hasCurrentCollector={Boolean(route.assignedCollector)}
           onClose={() => setShowAssign(false)}
           onSubmit={(values) => assignMutation.mutate(values)}
         />
@@ -320,12 +332,14 @@ function AssignCollectorModal({
   collectors,
   isSubmitting,
   error,
+  hasCurrentCollector,
   onClose,
   onSubmit,
 }: {
   collectors: { userId: string; firstName: string; lastName: string }[];
   isSubmitting: boolean;
   error: Error | null;
+  hasCurrentCollector?: boolean;
   onClose: () => void;
   onSubmit: (values: AssignCollectorFormValues) => void;
 }) {
@@ -337,7 +351,10 @@ function AssignCollectorModal({
   });
 
   return (
-    <Modal title="Asignar cobrador" onClose={onClose}>
+    <Modal
+      title={hasCurrentCollector ? "Cambiar cobrador" : "Asignar cobrador"}
+      onClose={onClose}
+    >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm font-medium">Cobrador</label>

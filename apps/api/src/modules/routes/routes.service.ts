@@ -10,6 +10,7 @@ import { AuditService } from "../audit/audit.service";
 import {
   ApiErrorCode,
   AuditAction,
+  ShiftType,
   UserRoleCode,
 } from "../../common/constants";
 import { JwtPayload } from "../auth/interfaces/jwt-payload.interface";
@@ -102,8 +103,8 @@ export class RoutesService {
 
     const route = await this.routesRepository.createRoute({
       name: dto.name,
-      shift: dto.shift,
-      dayOfWeek: dto.dayOfWeek,
+      shift: dto.shift ?? ShiftType.MORNING,
+      dayOfWeek: dto.dayOfWeek ?? null,
       description: dto.description,
     });
 
@@ -115,6 +116,24 @@ export class RoutesService {
       afterState: { name: route.name, shift: route.shift },
       ipAddress: ipAddress ?? null,
     });
+
+    if (dto.collectorId) {
+      await this.assignCollector(
+        user,
+        route.id,
+        {
+          collectorId: dto.collectorId,
+          effectiveFrom: todayInTimezone(this.timezone),
+        },
+        ipAddress,
+      );
+    }
+
+    const rows = await this.routesRepository.findAllAdmin({});
+    const row = rows.find((r) => r.id === route.id);
+    if (row) {
+      return mapRouteSummary(row);
+    }
 
     return mapRouteSummary({
       id: route.id,
