@@ -237,6 +237,9 @@ function CreateClientModal({
   });
 
   const selectedCountry = form.watch("country");
+  const selectedDepartment = form.watch("department");
+  const selectedCity = form.watch("city");
+  const selectedCityCustom = form.watch("cityCustom");
   const lat = form.watch("lat");
   const lng = form.watch("lng");
   const phonePrefix = selectedCountry
@@ -325,6 +328,9 @@ function CreateClientModal({
             <LocationPicker
               className="sm:col-span-2"
               countryCode={selectedCountry}
+              departmentCode={selectedDepartment}
+              city={selectedCity}
+              cityCustom={selectedCityCustom}
               value={mapLocation}
               onChange={(location) => {
                 if (location) {

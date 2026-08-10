@@ -1,11 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  OTHER_ROUTE_CITY_VALUE,
   buildGoogleMapsUrl,
-  getCountryMapCenter,
+  geocodeCityLocation,
+  getLocationMapView,
   type GeoPoint,
+  type LocationMapView,
 } from "@/lib/constants/route-locations";
 
 const LocationMap = dynamic(
@@ -24,6 +27,9 @@ interface LocationPickerProps {
   value: GeoPoint | null;
   onChange: (location: GeoPoint | null) => void;
   countryCode?: string;
+  departmentCode?: string;
+  city?: string;
+  cityCustom?: string;
   className?: string;
 }
 
@@ -44,13 +50,81 @@ export function LocationPicker({
   value,
   onChange,
   countryCode,
+  departmentCode,
+  city,
+  cityCustom,
   className,
 }: LocationPickerProps) {
   const [isLocating, setIsLocating] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(Boolean(value));
 
-  const mapCenter = getCountryMapCenter(countryCode);
+  const resolvedCityName =
+    city && city !== OTHER_ROUTE_CITY_VALUE
+      ? city.trim()
+      : cityCustom?.trim() ?? "";
+
+  const baseMapView = useMemo(
+    () =>
+      getLocationMapView({
+        countryCode,
+        departmentCode,
+        city,
+        cityCustom,
+      }),
+    [countryCode, departmentCode, city, cityCustom],
+  );
+
+  const [mapView, setMapView] = useState<LocationMapView>(baseMapView);
+
+  useEffect(() => {
+    if (value) return;
+
+    setMapView(baseMapView);
+
+    const needsGeocode =
+      Boolean(countryCode) &&
+      Boolean(departmentCode) &&
+      city === OTHER_ROUTE_CITY_VALUE &&
+      Boolean(resolvedCityName) &&
+      baseMapView.zoom < 13;
+
+    if (!needsGeocode || !countryCode || !departmentCode) {
+      setIsGeocoding(false);
+      return;
+    }
+
+    let cancelled = false;
+    setIsGeocoding(true);
+
+    void geocodeCityLocation({
+      countryCode,
+      departmentCode,
+      cityName: resolvedCityName,
+    }).then((point) => {
+      if (cancelled || value) return;
+      if (point) {
+        setMapView({
+          center: point,
+          zoom: 13,
+          label: resolvedCityName,
+        });
+      }
+      setIsGeocoding(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    baseMapView,
+    city,
+    countryCode,
+    departmentCode,
+    resolvedCityName,
+    value,
+  ]);
 
   const handleUseCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -84,14 +158,30 @@ export function LocationPicker({
     );
   }, [onChange]);
 
+  const mapCenter = value ?? mapView.center;
+  const mapZoom = value ? 16 : mapView.zoom;
+
   return (
     <div className={className}>
       <label className="mb-1 block text-sm font-medium text-slate-700">
         Ubicación en mapa
       </label>
       <p className="mb-3 text-xs text-slate-500">
-        Guarda la ubicación actual del dispositivo o elige un punto manualmente en el mapa.
+        El mapa se centra en la ciudad seleccionada arriba. Guarda tu ubicación
+        actual o elige un punto específico manualmente.
       </p>
+
+      {countryCode && departmentCode && resolvedCityName ? (
+        <p className="mb-3 text-xs text-brand-700">
+          {isGeocoding
+            ? `Buscando ${resolvedCityName} en el mapa…`
+            : `Mapa centrado en ${mapView.label ?? resolvedCityName}.`}
+        </p>
+      ) : (
+        <p className="mb-3 text-xs text-amber-700">
+          Selecciona país, departamento y ciudad para centrar el mapa en esa zona.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-2">
         <button
@@ -141,7 +231,8 @@ export function LocationPicker({
       {showMap && (
         <div className="mt-3 h-56 overflow-hidden rounded-lg border border-slate-200 sm:h-64">
           <LocationMap
-            center={value ?? mapCenter}
+            center={mapCenter}
+            zoom={mapZoom}
             value={value}
             onChange={(location) => {
               setError(null);
@@ -153,7 +244,8 @@ export function LocationPicker({
 
       {showMap && !value && (
         <p className="mt-2 text-xs text-slate-500">
-          Haz clic en el mapa para colocar el marcador. También puedes arrastrarlo después de colocarlo.
+          Haz clic en el mapa para colocar el marcador. También puedes arrastrarlo
+          después de colocarlo.
         </p>
       )}
     </div>

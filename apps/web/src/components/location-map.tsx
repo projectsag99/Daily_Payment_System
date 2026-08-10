@@ -30,18 +30,27 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 interface LocationMapProps {
   center: GeoPoint;
+  zoom: number;
   value: GeoPoint | null;
   onChange: (location: GeoPoint) => void;
 }
 
-function RecenterMap({ center, value }: { center: GeoPoint; value: GeoPoint | null }) {
+function RecenterMap({
+  center,
+  value,
+  zoom,
+}: {
+  center: GeoPoint;
+  value: GeoPoint | null;
+  zoom: number;
+}) {
   const map = useMap();
 
   useEffect(() => {
     if (!value) {
-      map.setView([center.lat, center.lng], 6);
+      map.setView([center.lat, center.lng], zoom, { animate: true });
     }
-  }, [center.lat, center.lng, map, value]);
+  }, [center.lat, center.lng, map, value, zoom]);
 
   return null;
 }
@@ -71,13 +80,13 @@ function MapClickHandler({
   return null;
 }
 
-export function LocationMap({ center, value, onChange }: LocationMapProps) {
+export function LocationMap({ center, zoom, value, onChange }: LocationMapProps) {
   const markerPosition = value ?? center;
 
   return (
     <MapContainer
       center={[markerPosition.lat, markerPosition.lng]}
-      zoom={value ? 16 : 6}
+      zoom={value ? 16 : zoom}
       scrollWheelZoom
       className="h-full w-full rounded-lg"
     >
@@ -85,7 +94,7 @@ export function LocationMap({ center, value, onChange }: LocationMapProps) {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <RecenterMap center={center} value={value} />
+      <RecenterMap center={center} value={value} zoom={zoom} />
       <ZoomToValue value={value} />
       <MapClickHandler onChange={onChange} />
       {value && (

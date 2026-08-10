@@ -118,6 +118,9 @@ export default function ClientDetailPage() {
   });
 
   const selectedCountry = watch("country");
+  const selectedDepartment = watch("department");
+  const selectedCity = watch("city");
+  const selectedCityCustom = watch("cityCustom");
   const lat = watch("lat");
   const lng = watch("lng");
   const phonePrefix = selectedCountry
@@ -215,6 +218,9 @@ export default function ClientDetailPage() {
             />
             <LocationPicker
               countryCode={selectedCountry}
+              departmentCode={selectedDepartment}
+              city={selectedCity}
+              cityCustom={selectedCityCustom}
               value={mapLocation}
               onChange={(location) => {
                 if (location) {

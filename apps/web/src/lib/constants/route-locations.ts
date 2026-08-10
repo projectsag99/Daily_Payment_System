@@ -50,6 +50,158 @@ export function getCountryMapCenter(countryCode?: string): GeoPoint {
   return COUNTRY_MAP_CENTERS.CO;
 }
 
+export interface LocationMapView {
+  center: GeoPoint;
+  zoom: number;
+  label?: string;
+}
+
+function parseCoordinate(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function getCityCoordinates(
+  countryCode: string,
+  departmentCode: string,
+  cityName: string,
+): GeoPoint | null {
+  const normalizedCity = cityName.trim().toLowerCase();
+  if (!normalizedCity) return null;
+
+  const cities = getRouteCities(countryCode, departmentCode);
+  const match =
+    cities.find((entry) => entry.name.toLowerCase() === normalizedCity) ??
+    cities.find(
+      (entry) =>
+        entry.name.toLowerCase().includes(normalizedCity) ||
+        normalizedCity.includes(entry.name.toLowerCase()),
+    );
+
+  if (!match) return null;
+
+  const lat = parseCoordinate(match.latitude);
+  const lng = parseCoordinate(match.longitude);
+  if (lat === null || lng === null) return null;
+
+  return { lat, lng };
+}
+
+export function getDepartmentMapCenter(
+  countryCode: string,
+  departmentCode: string,
+): GeoPoint | null {
+  const state = State.getStateByCodeAndCountry(departmentCode, countryCode);
+  const lat = parseCoordinate(state?.latitude);
+  const lng = parseCoordinate(state?.longitude);
+  if (lat === null || lng === null) return null;
+  return { lat, lng };
+}
+
+export function getLocationMapView(input: {
+  countryCode?: string;
+  departmentCode?: string;
+  city?: string;
+  cityCustom?: string;
+}): LocationMapView {
+  const countryCode = input.countryCode;
+  if (!countryCode) {
+    return {
+      center: getCountryMapCenter(),
+      zoom: 6,
+      label: "Colombia",
+    };
+  }
+
+  const cityName =
+    input.city && input.city !== OTHER_ROUTE_CITY_VALUE
+      ? input.city.trim()
+      : input.cityCustom?.trim() ?? "";
+
+  if (cityName && input.departmentCode) {
+    const cityCoords = getCityCoordinates(
+      countryCode,
+      input.departmentCode,
+      cityName,
+    );
+    if (cityCoords) {
+      return {
+        center: cityCoords,
+        zoom: 13,
+        label: cityName,
+      };
+    }
+  }
+
+  if (input.departmentCode) {
+    const departmentCenter = getDepartmentMapCenter(
+      countryCode,
+      input.departmentCode,
+    );
+    if (departmentCenter) {
+      return {
+        center: departmentCenter,
+        zoom: 10,
+        label: formatDepartmentLabel(
+          getRouteDepartmentName(countryCode, input.departmentCode),
+        ),
+      };
+    }
+  }
+
+  return {
+    center: getCountryMapCenter(countryCode),
+    zoom: 6,
+    label: getRouteCountryName(countryCode),
+  };
+}
+
+export async function geocodeCityLocation(input: {
+  countryCode: string;
+  departmentCode?: string;
+  cityName: string;
+}): Promise<GeoPoint | null> {
+  const cityName = input.cityName.trim();
+  if (!cityName) return null;
+
+  const queryParts = [
+    cityName,
+    input.departmentCode
+      ? formatDepartmentLabel(
+          getRouteDepartmentName(input.countryCode, input.departmentCode),
+        )
+      : null,
+    getRouteCountryName(input.countryCode),
+  ].filter(Boolean);
+
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.searchParams.set("q", queryParts.join(", "));
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
+
+  try {
+    const response = await fetch(url.toString(), {
+      headers: {
+        Accept: "application/json",
+        "Accept-Language": "es",
+      },
+    });
+    if (!response.ok) return null;
+
+    const results = (await response.json()) as Array<{ lat: string; lon: string }>;
+    if (!results[0]) return null;
+
+    const lat = parseCoordinate(results[0].lat);
+    const lng = parseCoordinate(results[0].lon);
+    if (lat === null || lng === null) return null;
+
+    return { lat, lng };
+  } catch {
+    return null;
+  }
+}
+
 export function buildGoogleMapsUrl(point: GeoPoint): string {
   return `https://www.google.com/maps?q=${point.lat},${point.lng}`;
 }
