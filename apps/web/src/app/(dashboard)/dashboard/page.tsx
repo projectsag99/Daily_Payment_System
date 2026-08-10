@@ -122,8 +122,8 @@ export default function DashboardPage() {
               </Link>
             </li>
             <li>
-              <Link href="/rules" className={linkClass}>
-                Configurar reglas de negocio
+              <Link href="/ajustes" className={linkClass}>
+                Ajustes del sistema
               </Link>
             </li>
           </ul>

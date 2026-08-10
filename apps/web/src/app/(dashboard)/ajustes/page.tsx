@@ -5,6 +5,11 @@ import { linkClass, pageSubtitle, pageTitle } from "@/lib/ui-classes";
 
 const settingsItems = [
   {
+    href: "/rules",
+    title: "Reglas de negocio",
+    description: "Alertas automáticas para cobradores y administradores.",
+  },
+  {
     href: "/auditoria",
     title: "Auditoría",
     description: "Registro de acciones y cambios en el sistema.",

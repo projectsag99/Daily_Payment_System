@@ -12,7 +12,6 @@ const adminLinks = [
   { href: "/routes", label: "Rutas" },
   { href: "/pagos", label: "Pagos" },
   { href: "/caja", label: "Caja" },
-  { href: "/rules", label: "Reglas" },
 ];
 
 const collectorLinks = [
@@ -32,7 +31,8 @@ export function NavLinks() {
 
   const settingsActive =
     pathname === "/ajustes" || pathname.startsWith("/ajustes/") ||
-    pathname === "/auditoria" || pathname.startsWith("/auditoria/");
+    pathname === "/auditoria" || pathname.startsWith("/auditoria/") ||
+    pathname === "/rules" || pathname.startsWith("/rules/");
 
   if (links.length === 0 && !isAdmin(user)) return null;
 

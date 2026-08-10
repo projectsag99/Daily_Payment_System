@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -28,6 +29,7 @@ import {
   updateRuleSchema,
 } from "@/lib/schemas/auth.schema";
 import { BusinessRule } from "@/lib/types/rules";
+import { linkClass } from "@/lib/ui-classes";
 
 export default function RulesPage() {
   const queryClient = useQueryClient();
@@ -69,7 +71,10 @@ export default function RulesPage() {
     <div>
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">
+          <Link href="/ajustes" className={`text-sm ${linkClass}`}>
+            ← Ajustes
+          </Link>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">
             Reglas de negocio
           </h1>
           <p className="mt-1 text-sm text-slate-600">
