@@ -3,8 +3,8 @@ import { authHeaders } from "@/lib/api/auth";
 import { ShiftType } from "@/lib/constants";
 import {
   AssignCollectorFormValues,
-  CreateRouteFormValues,
-  UpdateRouteFormValues,
+  CreateRoutePayload,
+  UpdateRoutePayload,
 } from "@/lib/schemas/auth.schema";
 import {
   CollectorRoute,
@@ -45,7 +45,7 @@ export async function fetchMyRoutes(date?: string): Promise<CollectorRoute[]> {
 }
 
 export async function createRoute(
-  values: CreateRouteFormValues,
+  values: CreateRoutePayload,
 ): Promise<RouteSummary> {
   return apiFetch<RouteSummary>("/routes", {
     method: "POST",
@@ -56,7 +56,7 @@ export async function createRoute(
 
 export async function updateRoute(
   id: string,
-  values: UpdateRouteFormValues,
+  values: UpdateRoutePayload,
 ): Promise<RouteSummary> {
   return apiFetch<RouteSummary>(`/routes/${id}`, {
     method: "PATCH",

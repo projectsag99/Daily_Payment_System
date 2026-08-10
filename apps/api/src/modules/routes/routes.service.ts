@@ -32,6 +32,7 @@ import {
 import {
   isValidRouteCity,
   isValidRouteCountryCode,
+  isValidRouteDepartment,
 } from "./domain/route-locations";
 
 @Injectable()
@@ -102,24 +103,34 @@ export class RoutesService {
     return rows.map(mapRouteSummary);
   }
 
-  private assertValidRouteLocation(country: string, city: string): void {
+  private assertValidRouteLocation(
+    country: string,
+    department: string,
+    city: string,
+  ): void {
     if (!isValidRouteCountryCode(country)) {
       throw new BadRequestException({
         code: ApiErrorCode.VALIDATION_ERROR,
         message: "País no válido",
       });
     }
-    if (!isValidRouteCity(country, city)) {
+    if (!isValidRouteDepartment(country, department)) {
       throw new BadRequestException({
         code: ApiErrorCode.VALIDATION_ERROR,
-        message: "Ciudad no válida para el país seleccionado",
+        message: "Departamento no válido para el país seleccionado",
+      });
+    }
+    if (!isValidRouteCity(country, department, city)) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "Ciudad no válida",
       });
     }
   }
 
   async create(user: JwtPayload, dto: CreateRouteDto, ipAddress?: string) {
     this.assertAdmin(user);
-    this.assertValidRouteLocation(dto.country, dto.city);
+    this.assertValidRouteLocation(dto.country, dto.department, dto.city);
 
     const route = await this.routesRepository.createRoute({
       name: dto.name,
@@ -127,6 +138,7 @@ export class RoutesService {
       dayOfWeek: dto.dayOfWeek ?? null,
       description: dto.description,
       country: dto.country,
+      department: dto.department,
       city: dto.city,
     });
 
@@ -139,6 +151,7 @@ export class RoutesService {
         name: route.name,
         shift: route.shift,
         country: route.country,
+        department: route.department,
         city: route.city,
       },
       ipAddress: ipAddress ?? null,
@@ -170,6 +183,7 @@ export class RoutesService {
       is_active: route.isActive,
       description: route.description,
       country: route.country,
+      department: route.department,
       city: route.city,
       client_count: "0",
       collector_id: null,
@@ -189,16 +203,21 @@ export class RoutesService {
     this.assertAdmin(user);
     const before = await this.assertRouteExists(routeId);
 
-    if (dto.country !== undefined || dto.city !== undefined) {
+    if (
+      dto.country !== undefined ||
+      dto.department !== undefined ||
+      dto.city !== undefined
+    ) {
       const country = dto.country ?? before.country;
+      const department = dto.department ?? before.department;
       const city = dto.city ?? before.city;
-      if (!country || !city) {
+      if (!country || !department || !city) {
         throw new BadRequestException({
           code: ApiErrorCode.VALIDATION_ERROR,
-          message: "País y ciudad son obligatorios",
+          message: "País, departamento y ciudad son obligatorios",
         });
       }
-      this.assertValidRouteLocation(country, city);
+      this.assertValidRouteLocation(country, department, city);
     }
 
     const patch: Parameters<RoutesRepository["updateRoute"]>[1] = {};
@@ -208,6 +227,7 @@ export class RoutesService {
     if (dto.isActive !== undefined) patch.isActive = dto.isActive;
     if (dto.description !== undefined) patch.description = dto.description;
     if (dto.country !== undefined) patch.country = dto.country;
+    if (dto.department !== undefined) patch.department = dto.department;
     if (dto.city !== undefined) patch.city = dto.city;
 
     const updated = await this.routesRepository.updateRoute(routeId, patch);

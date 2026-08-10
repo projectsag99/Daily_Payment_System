@@ -9,6 +9,7 @@ export interface RouteSummary {
   isActive: boolean;
   description: string | null;
   country: string | null;
+  department: string | null;
   city: string | null;
   clientCount: number;
   assignedCollector: { id: string; name: string } | null;

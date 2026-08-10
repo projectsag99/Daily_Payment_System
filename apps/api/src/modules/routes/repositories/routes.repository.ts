@@ -60,6 +60,7 @@ export class RoutesRepository {
         r.is_active,
         r.description,
         r.country,
+        r.department,
         r.city,
         r.created_at,
         r.updated_at,
@@ -112,6 +113,7 @@ export class RoutesRepository {
     dayOfWeek?: number | null;
     description?: string;
     country: string;
+    department: string;
     city: string;
   }): Promise<Route> {
     const route = this.routeRepository.create({
@@ -120,6 +122,7 @@ export class RoutesRepository {
       dayOfWeek: data.dayOfWeek ?? null,
       description: data.description ?? null,
       country: data.country,
+      department: data.department,
       city: data.city,
       isActive: true,
     });
@@ -135,6 +138,7 @@ export class RoutesRepository {
       isActive: boolean;
       description: string | null;
       country: string;
+      department: string;
       city: string;
     }>,
   ): Promise<Route | null> {
@@ -185,6 +189,7 @@ export class RoutesRepository {
         r.is_active,
         r.description,
         r.country,
+        r.department,
         r.city,
         r.created_at,
         r.updated_at,

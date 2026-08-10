@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormRegister, UseFormSetValue, UseFormWatch, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
 import { Modal } from "@/components/ui/modal";
@@ -29,16 +29,16 @@ import {
   AssignCollectorFormValues,
   UpdateRouteFormValues,
   assignCollectorSchema,
+  toUpdateRoutePayload,
   updateRouteSchema,
 } from "@/lib/schemas/auth.schema";
 import { CollectorSummary } from "@/lib/types/collectors";
 import { formatDate } from "@/lib/utils/format";
 import { collectorSelectLabel } from "@/lib/utils/collector-label";
+import { RouteLocationFields, RouteLocationFieldsValues } from "@/components/route-location-fields";
 import {
-  ROUTE_COUNTRIES,
-  ROUTE_CITIES_BY_COUNTRY,
-  RouteCountryCode,
   formatRouteLocation,
+  routeFormLocationValues,
 } from "@/lib/constants/route-locations";
 
 export default function RouteDetailPage() {
@@ -83,7 +83,8 @@ export default function RouteDetailPage() {
   }, [clientsQuery.data]);
 
   const updateMutation = useMutation({
-    mutationFn: (values: UpdateRouteFormValues) => updateRoute(routeId, values),
+    mutationFn: (values: UpdateRouteFormValues) =>
+      updateRoute(routeId, toUpdateRoutePayload(values)),
     onSuccess: () => {
       setFeedback("Ruta actualizada.");
       void queryClient.invalidateQueries({ queryKey: ["routes"] });
@@ -119,13 +120,7 @@ export default function RouteDetailPage() {
     },
   });
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    setValue,
-    formState: { errors },
-  } = useForm<UpdateRouteFormValues>({
+  const form = useForm<UpdateRouteFormValues>({
     resolver: zodResolver(updateRouteSchema),
     values: route
       ? {
@@ -134,28 +129,10 @@ export default function RouteDetailPage() {
           dayOfWeek: route.dayOfWeek,
           isActive: route.isActive,
           description: route.description ?? "",
-          country: (route.country as RouteCountryCode | null) ?? undefined,
-          city: route.city ?? "",
+          ...routeFormLocationValues(route),
         }
       : undefined,
   });
-
-  const selectedCountry = watch("country") as RouteCountryCode | undefined;
-  const selectedCity = watch("city");
-  const cities = selectedCountry ? ROUTE_CITIES_BY_COUNTRY[selectedCountry] : [];
-
-  useEffect(() => {
-    if (!selectedCountry) {
-      if (selectedCity) setValue("city", "");
-      return;
-    }
-    if (
-      selectedCity &&
-      !ROUTE_CITIES_BY_COUNTRY[selectedCountry].includes(selectedCity)
-    ) {
-      setValue("city", "");
-    }
-  }, [selectedCountry, selectedCity, setValue]);
 
   if (routesQuery.isLoading) {
     return <p className="text-sm text-slate-600">Cargando ruta…</p>;
@@ -192,7 +169,7 @@ export default function RouteDetailPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">{route.name}</h1>
         <p className="text-sm text-slate-600">
-          {formatRouteLocation(route.country, route.city)}
+          {formatRouteLocation(route.country, route.department, route.city)}
         </p>
       </div>
 
@@ -201,47 +178,32 @@ export default function RouteDetailPage() {
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="mb-4 font-semibold">Configuración</h2>
-          <form onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-3">
-            <Input label="Nombre" error={errors.name?.message} {...register("name")} />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium">País</label>
-                <select className={inputClass} {...register("country")}>
-                  <option value="">Seleccionar…</option>
-                  {ROUTE_COUNTRIES.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-                {errors.country && (
-                  <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
-                )}
-              </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">Ciudad</label>
-                <select
-                  className={inputClass}
-                  {...register("city")}
-                  disabled={!selectedCountry}
-                >
-                  <option value="">
-                    {selectedCountry ? "Seleccionar…" : "Elige un país"}
-                  </option>
-                  {cities.map((city) => (
-                    <option key={city} value={city}>
-                      {city}
-                    </option>
-                  ))}
-                </select>
-                {errors.city && (
-                  <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
-                )}
-              </div>
-            </div>
+          <form
+            onSubmit={form.handleSubmit((values) => updateMutation.mutate(values))}
+            className="space-y-3"
+          >
+            <Input
+              label="Nombre"
+              error={form.formState.errors.name?.message}
+              {...form.register("name")}
+            />
+            <RouteLocationFields
+              register={
+                form.register as unknown as UseFormRegister<RouteLocationFieldsValues>
+              }
+              watch={form.watch as unknown as UseFormWatch<RouteLocationFieldsValues>}
+              setValue={
+                form.setValue as unknown as UseFormSetValue<RouteLocationFieldsValues>
+              }
+              errors={
+                form.formState.errors as FieldErrors<RouteLocationFieldsValues>
+              }
+              inputClass={inputClass}
+              requireAll={false}
+            />
             <div>
               <label className="mb-1 block text-sm font-medium">Turno</label>
-              <select className={inputClass} {...register("shift")}>
+              <select className={inputClass} {...form.register("shift")}>
                 {SHIFT_TYPES.map((s) => (
                   <option key={s} value={s}>{SHIFT_LABELS[s]}</option>
                 ))}
@@ -249,7 +211,7 @@ export default function RouteDetailPage() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Día</label>
-              <select className={inputClass} {...register("dayOfWeek")}>
+              <select className={inputClass} {...form.register("dayOfWeek")}>
                 <option value="">Todos</option>
                 {DAY_LABELS.map((label, i) => (
                   <option key={label} value={i}>{label}</option>
@@ -257,12 +219,12 @@ export default function RouteDetailPage() {
               </select>
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" {...register("isActive")} />
+              <input type="checkbox" {...form.register("isActive")} />
               Ruta activa
             </label>
             <div>
               <label className="mb-1 block text-sm font-medium">Descripción</label>
-              <textarea rows={2} className={inputClass} {...register("description")} />
+              <textarea rows={2} className={inputClass} {...form.register("description")} />
             </div>
             <button type="submit" disabled={updateMutation.isPending} className={btnPrimary}>
               {updateMutation.isPending ? "Guardando…" : "Guardar"}

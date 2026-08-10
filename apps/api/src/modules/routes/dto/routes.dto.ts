@@ -30,7 +30,12 @@ export class CreateRouteDto {
   @IsIn(ROUTE_COUNTRY_CODES)
   country!: string;
 
-  @ApiProperty({ example: "Bogotá" })
+  @ApiProperty({ example: "ANT", description: "State / department ISO code" })
+  @IsString()
+  @MaxLength(10)
+  department!: string;
+
+  @ApiProperty({ example: "Medellín" })
   @IsString()
   @MaxLength(100)
   city!: string;
@@ -95,6 +100,12 @@ export class UpdateRouteDto {
   @Length(2, 2)
   @IsIn(ROUTE_COUNTRY_CODES)
   country?: string;
+
+  @ApiPropertyOptional({ example: "ANT" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(10)
+  department?: string;
 
   @ApiPropertyOptional({ example: "Bogotá" })
   @IsOptional()

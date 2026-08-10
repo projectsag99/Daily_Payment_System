@@ -1,3 +1,5 @@
+import { City, State } from "country-state-city";
+
 export const ROUTE_COUNTRIES = [
   { code: "CO", name: "Colombia" },
   { code: "UY", name: "Uruguay" },
@@ -19,164 +21,70 @@ export const ROUTE_COUNTRY_CODES: RouteCountryCode[] = ROUTE_COUNTRIES.map(
   (country) => country.code,
 );
 
-export const ROUTE_CITIES_BY_COUNTRY: Record<
-  RouteCountryCode,
-  readonly string[]
-> = {
-  CO: [
-    "Bogotá",
-    "Medellín",
-    "Cali",
-    "Barranquilla",
-    "Cartagena",
-    "Bucaramanga",
-    "Pereira",
-    "Manizales",
-    "Cúcuta",
-    "Ibagué",
-  ],
-  UY: [
-    "Montevideo",
-    "Salto",
-    "Paysandú",
-    "Las Piedras",
-    "Rivera",
-    "Maldonado",
-    "Fray Bentos",
-    "Mercedes",
-    "Artigas",
-    "Durazno",
-  ],
-  AR: [
-    "Buenos Aires",
-    "Córdoba",
-    "Rosario",
-    "Mendoza",
-    "La Plata",
-    "Mar del Plata",
-    "Salta",
-    "Santa Fe",
-    "San Juan",
-    "Tucumán",
-  ],
-  EC: [
-    "Quito",
-    "Guayaquil",
-    "Cuenca",
-    "Santo Domingo",
-    "Machala",
-    "Manta",
-    "Portoviejo",
-    "Ambato",
-    "Loja",
-    "Esmeraldas",
-  ],
-  PE: [
-    "Lima",
-    "Arequipa",
-    "Trujillo",
-    "Chiclayo",
-    "Piura",
-    "Cusco",
-    "Iquitos",
-    "Huancayo",
-    "Tacna",
-    "Juliaca",
-  ],
-  MX: [
-    "Ciudad de México",
-    "Guadalajara",
-    "Monterrey",
-    "Puebla",
-    "Tijuana",
-    "León",
-    "Mérida",
-    "Querétaro",
-    "San Luis Potosí",
-    "Aguascalientes",
-  ],
-  CL: [
-    "Santiago",
-    "Valparaíso",
-    "Concepción",
-    "La Serena",
-    "Antofagasta",
-    "Temuco",
-    "Rancagua",
-    "Talca",
-    "Arica",
-    "Puerto Montt",
-  ],
-  VE: [
-    "Caracas",
-    "Maracaibo",
-    "Valencia",
-    "Barquisimeto",
-    "Maracay",
-    "Ciudad Guayana",
-    "San Cristóbal",
-    "Maturín",
-    "Barcelona",
-    "Cumaná",
-  ],
-  PA: [
-    "Ciudad de Panamá",
-    "San Miguelito",
-    "Colón",
-    "David",
-    "La Chorrera",
-    "Santiago",
-    "Chitré",
-    "Penonomé",
-    "Aguadulce",
-    "Arraiján",
-  ],
-  CR: [
-    "San José",
-    "Alajuela",
-    "Cartago",
-    "Heredia",
-    "Liberia",
-    "Puntarenas",
-    "Limón",
-    "San Isidro",
-    "Quesada",
-    "Desamparados",
-  ],
-  BO: [
-    "La Paz",
-    "Santa Cruz de la Sierra",
-    "Cochabamba",
-    "Sucre",
-    "Oruro",
-    "Tarija",
-    "Potosí",
-    "Trinidad",
-    "Cobija",
-    "Riberalta",
-  ],
-  PY: [
-    "Asunción",
-    "Ciudad del Este",
-    "San Lorenzo",
-    "Luque",
-    "Capiatá",
-    "Lambaré",
-    "Fernando de la Mora",
-    "Encarnación",
-    "Caaguazú",
-    "Villarrica",
-  ],
-};
-
 export function isValidRouteCountryCode(value: string): value is RouteCountryCode {
   return (ROUTE_COUNTRY_CODES as readonly string[]).includes(value);
 }
 
-export function isValidRouteCity(country: RouteCountryCode, city: string): boolean {
-  return ROUTE_CITIES_BY_COUNTRY[country].includes(city);
+export function getRouteStates(countryCode: string) {
+  if (!isValidRouteCountryCode(countryCode)) {
+    return [];
+  }
+  return State.getStatesOfCountry(countryCode).sort((a, b) =>
+    a.name.localeCompare(b.name, "es"),
+  );
+}
+
+export function getRouteCities(countryCode: string, departmentCode: string) {
+  if (!isValidRouteCountryCode(countryCode) || !departmentCode) {
+    return [];
+  }
+  return City.getCitiesOfState(countryCode, departmentCode).sort((a, b) =>
+    a.name.localeCompare(b.name, "es"),
+  );
+}
+
+export function getRouteDepartmentName(
+  countryCode: string,
+  departmentCode: string,
+): string | null {
+  if (!departmentCode) return null;
+  return (
+    State.getStateByCodeAndCountry(departmentCode, countryCode)?.name ??
+    departmentCode
+  );
 }
 
 export function getRouteCountryName(code: string): string | null {
   return ROUTE_COUNTRIES.find((country) => country.code === code)?.name ?? null;
+}
+
+export function isValidRouteDepartment(
+  countryCode: string,
+  departmentCode: string,
+): boolean {
+  return getRouteStates(countryCode).some(
+    (state) => state.isoCode === departmentCode,
+  );
+}
+
+export function isValidRouteCity(
+  countryCode: string,
+  departmentCode: string,
+  city: string,
+): boolean {
+  if (!city.trim()) return false;
+  const cities = getRouteCities(countryCode, departmentCode);
+  if (cities.some((entry) => entry.name === city)) {
+    return true;
+  }
+  // Allow custom city names when not present in the dataset.
+  return city.trim().length >= 2;
+}
+
+export function formatDepartmentLabel(name: string): string {
+  return name
+    .replace(/ Department$/i, "")
+    .replace(/ Province$/i, "")
+    .replace(/ Region$/i, "")
+    .trim();
 }

@@ -9,6 +9,7 @@ export function mapRouteSummary(row: RouteSummaryRow) {
     isActive: row.is_active,
     description: row.description,
     country: row.country,
+    department: row.department,
     city: row.city,
     clientCount: Number(row.client_count ?? 0),
     assignedCollector: row.collector_id

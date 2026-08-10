@@ -38,6 +38,7 @@ export interface RouteSummaryRow {
   is_active: boolean;
   description: string | null;
   country: string | null;
+  department: string | null;
   city: string | null;
   client_count: string;
   collector_id: string | null;

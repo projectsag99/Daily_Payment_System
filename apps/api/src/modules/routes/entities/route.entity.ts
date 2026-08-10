@@ -31,6 +31,9 @@ export class Route {
   @Column({ type: "varchar", length: 2, nullable: true })
   country!: string | null;
 
+  @Column({ type: "varchar", length: 10, nullable: true })
+  department!: string | null;
+
   @Column({ type: "varchar", length: 100, nullable: true })
   city!: string | null;
 

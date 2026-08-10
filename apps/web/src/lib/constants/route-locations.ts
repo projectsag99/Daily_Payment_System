@@ -1,3 +1,5 @@
+import { City, State } from "country-state-city";
+
 export const ROUTE_COUNTRIES = [
   { code: "CO", name: "Colombia" },
   { code: "UY", name: "Uruguay" },
@@ -19,168 +21,92 @@ export const ROUTE_COUNTRY_CODES = ROUTE_COUNTRIES.map(
   (country) => country.code,
 ) as [RouteCountryCode, ...RouteCountryCode[]];
 
-export const ROUTE_CITIES_BY_COUNTRY: Record<
-  RouteCountryCode,
-  readonly string[]
-> = {
-  CO: [
-    "Bogotá",
-    "Medellín",
-    "Cali",
-    "Barranquilla",
-    "Cartagena",
-    "Bucaramanga",
-    "Pereira",
-    "Manizales",
-    "Cúcuta",
-    "Ibagué",
-  ],
-  UY: [
-    "Montevideo",
-    "Salto",
-    "Paysandú",
-    "Las Piedras",
-    "Rivera",
-    "Maldonado",
-    "Fray Bentos",
-    "Mercedes",
-    "Artigas",
-    "Durazno",
-  ],
-  AR: [
-    "Buenos Aires",
-    "Córdoba",
-    "Rosario",
-    "Mendoza",
-    "La Plata",
-    "Mar del Plata",
-    "Salta",
-    "Santa Fe",
-    "San Juan",
-    "Tucumán",
-  ],
-  EC: [
-    "Quito",
-    "Guayaquil",
-    "Cuenca",
-    "Santo Domingo",
-    "Machala",
-    "Manta",
-    "Portoviejo",
-    "Ambato",
-    "Loja",
-    "Esmeraldas",
-  ],
-  PE: [
-    "Lima",
-    "Arequipa",
-    "Trujillo",
-    "Chiclayo",
-    "Piura",
-    "Cusco",
-    "Iquitos",
-    "Huancayo",
-    "Tacna",
-    "Juliaca",
-  ],
-  MX: [
-    "Ciudad de México",
-    "Guadalajara",
-    "Monterrey",
-    "Puebla",
-    "Tijuana",
-    "León",
-    "Mérida",
-    "Querétaro",
-    "San Luis Potosí",
-    "Aguascalientes",
-  ],
-  CL: [
-    "Santiago",
-    "Valparaíso",
-    "Concepción",
-    "La Serena",
-    "Antofagasta",
-    "Temuco",
-    "Rancagua",
-    "Talca",
-    "Arica",
-    "Puerto Montt",
-  ],
-  VE: [
-    "Caracas",
-    "Maracaibo",
-    "Valencia",
-    "Barquisimeto",
-    "Maracay",
-    "Ciudad Guayana",
-    "San Cristóbal",
-    "Maturín",
-    "Barcelona",
-    "Cumaná",
-  ],
-  PA: [
-    "Ciudad de Panamá",
-    "San Miguelito",
-    "Colón",
-    "David",
-    "La Chorrera",
-    "Santiago",
-    "Chitré",
-    "Penonomé",
-    "Aguadulce",
-    "Arraiján",
-  ],
-  CR: [
-    "San José",
-    "Alajuela",
-    "Cartago",
-    "Heredia",
-    "Liberia",
-    "Puntarenas",
-    "Limón",
-    "San Isidro",
-    "Quesada",
-    "Desamparados",
-  ],
-  BO: [
-    "La Paz",
-    "Santa Cruz de la Sierra",
-    "Cochabamba",
-    "Sucre",
-    "Oruro",
-    "Tarija",
-    "Potosí",
-    "Trinidad",
-    "Cobija",
-    "Riberalta",
-  ],
-  PY: [
-    "Asunción",
-    "Ciudad del Este",
-    "San Lorenzo",
-    "Luque",
-    "Capiatá",
-    "Lambaré",
-    "Fernando de la Mora",
-    "Encarnación",
-    "Caaguazú",
-    "Villarrica",
-  ],
-};
+export const OTHER_ROUTE_CITY_VALUE = "__other__";
+
+export function getRouteStates(countryCode: string) {
+  return State.getStatesOfCountry(countryCode).sort((a, b) =>
+    a.name.localeCompare(b.name, "es"),
+  );
+}
+
+export function getRouteCities(countryCode: string, departmentCode: string) {
+  if (!countryCode || !departmentCode) return [];
+  return City.getCitiesOfState(countryCode, departmentCode).sort((a, b) =>
+    a.name.localeCompare(b.name, "es"),
+  );
+}
+
+export function getRouteDepartmentName(
+  countryCode: string | null | undefined,
+  departmentCode: string | null | undefined,
+): string {
+  if (!countryCode || !departmentCode) return "—";
+  return (
+    State.getStateByCodeAndCountry(departmentCode, countryCode)?.name ??
+    departmentCode
+  );
+}
 
 export function getRouteCountryName(code: string | null | undefined): string {
   if (!code) return "—";
   return ROUTE_COUNTRIES.find((country) => country.code === code)?.name ?? code;
 }
 
+export function formatDepartmentLabel(name: string): string {
+  return name
+    .replace(/ Department$/i, "")
+    .replace(/ Province$/i, "")
+    .replace(/ Region$/i, "")
+    .trim();
+}
+
 export function formatRouteLocation(
   country: string | null | undefined,
+  department: string | null | undefined,
   city: string | null | undefined,
 ): string {
-  if (!city && !country) return "—";
-  if (city && country) {
-    return `${city}, ${getRouteCountryName(country)}`;
+  if (!city && !department && !country) return "—";
+  const parts = [
+    city,
+    department
+      ? formatDepartmentLabel(getRouteDepartmentName(country, department))
+      : null,
+    country ? getRouteCountryName(country) : null,
+  ].filter(Boolean);
+  return parts.join(", ");
+}
+
+export function resolveRouteCityValue(
+  city: string,
+  cityCustom?: string,
+): string {
+  if (city === OTHER_ROUTE_CITY_VALUE) {
+    return cityCustom?.trim() ?? "";
   }
-  return city ?? getRouteCountryName(country);
+  return city.trim();
+}
+
+export function routeFormLocationValues(route: {
+  country: string | null;
+  department: string | null;
+  city: string | null;
+}) {
+  if (!route.country || !route.department || !route.city) {
+    return {
+      country: undefined as RouteCountryCode | undefined,
+      department: "",
+      city: "",
+      cityCustom: "",
+    };
+  }
+
+  const cities = getRouteCities(route.country, route.department);
+  const isKnown = cities.some((entry) => entry.name === route.city);
+
+  return {
+    country: route.country as RouteCountryCode,
+    department: route.department,
+    city: isKnown ? route.city : OTHER_ROUTE_CITY_VALUE,
+    cityCustom: isKnown ? "" : route.city,
+  };
 }
