@@ -484,6 +484,24 @@ export class ClientsRepository {
     await this.documentRepository.softDelete(documentId);
   }
 
+  async routeExists(routeId: string): Promise<boolean> {
+    const rows = await this.dataSource.query(
+      `SELECT id FROM routes WHERE id = $1 AND deleted_at IS NULL`,
+      [routeId],
+    );
+    return rows.length > 0;
+  }
+
+  async assignClientToRoute(clientId: string, routeId: string): Promise<void> {
+    await this.dataSource.query(
+      `INSERT INTO route_client_assignments (route_id, client_id, sequence_order)
+       SELECT $1, $2, COALESCE(MAX(sequence_order), 0) + 1
+       FROM route_client_assignments
+       WHERE route_id = $1`,
+      [routeId, clientId],
+    );
+  }
+
   async findAssignedRoutes(clientId: string) {
     return this.dataSource.query(
       `SELECT

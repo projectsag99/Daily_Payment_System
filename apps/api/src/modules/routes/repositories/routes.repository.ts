@@ -247,9 +247,47 @@ export class RoutesRepository {
             AND i.due_date < $2::date
         ) AS overdue_installment_count,
         ST_Y(c.current_location::geometry) AS lat,
-        ST_X(c.current_location::geometry) AS lng
+        ST_X(c.current_location::geometry) AS lng,
+        active_credit.id AS credit_id,
+        active_credit.principal_amount AS credit_principal_amount,
+        active_credit.currency AS credit_currency,
+        active_credit.installment_amount AS credit_installment_amount,
+        active_credit.total_installments AS credit_total_installments,
+        active_credit.interest_rate AS credit_interest_rate,
+        active_credit.paid_installments AS credit_paid_installments,
+        active_credit.total_paid AS credit_total_paid,
+        active_credit.balance AS credit_balance
       FROM route_client_assignments rca
       INNER JOIN clients c ON c.id = rca.client_id AND c.deleted_at IS NULL
+      LEFT JOIN LATERAL (
+        SELECT
+          cr.id,
+          cr.principal_amount,
+          cr.currency,
+          cr.installment_amount,
+          cr.total_installments,
+          cr.interest_rate,
+          (
+            SELECT COUNT(*)::text
+            FROM installments i
+            WHERE i.credit_id = cr.id AND i.status = 'paid'
+          ) AS paid_installments,
+          (
+            SELECT COALESCE(SUM(i.amount_paid), 0)::text
+            FROM installments i
+            WHERE i.credit_id = cr.id
+          ) AS total_paid,
+          (
+            SELECT COALESCE(SUM(i.amount_due - i.amount_paid), 0)::text
+            FROM installments i
+            WHERE i.credit_id = cr.id
+              AND i.status NOT IN ('paid', 'waived')
+          ) AS balance
+        FROM credits cr
+        WHERE cr.client_id = c.id AND cr.status = 'active'
+        ORDER BY cr.created_at DESC
+        LIMIT 1
+      ) active_credit ON true
       LEFT JOIN daily_visit_snapshots dvs
         ON dvs.route_id = rca.route_id
         AND dvs.client_id = rca.client_id

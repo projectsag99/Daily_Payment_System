@@ -25,6 +25,7 @@ export function mapRouteSummary(row: RouteSummaryRow) {
 
 export function mapRouteClient(row: RouteClientRow) {
   const hasLocation = row.lat !== null && row.lng !== null;
+  const hasCredit = row.credit_id !== null;
   return {
     id: row.id,
     code: row.code,
@@ -35,6 +36,21 @@ export function mapRouteClient(row: RouteClientRow) {
     overdueInstallmentCount: Number(row.overdue_installment_count ?? 0),
     location: hasLocation
       ? { lat: Number(row.lat), lng: Number(row.lng) }
+      : null,
+    activeCredit: hasCredit
+      ? {
+          id: row.credit_id!,
+          principalAmount: Number(row.credit_principal_amount ?? 0),
+          currency: row.credit_currency ?? "COP",
+          installmentAmount: Number(row.credit_installment_amount ?? 0),
+          totalInstallments: row.credit_total_installments ?? 0,
+          interestRate: row.credit_interest_rate
+            ? Number(row.credit_interest_rate)
+            : null,
+          paidInstallments: Number(row.credit_paid_installments ?? 0),
+          totalPaid: Number(row.credit_total_paid ?? 0),
+          balance: Number(row.credit_balance ?? 0),
+        }
       : null,
   };
 }

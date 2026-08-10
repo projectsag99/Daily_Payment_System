@@ -86,6 +86,10 @@ export class CreateClientDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiProperty({ description: "Route to assign the new client to" })
+  @IsUUID()
+  routeId!: string;
 }
 
 export class UpdateClientDto {

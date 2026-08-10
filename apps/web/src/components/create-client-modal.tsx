@@ -33,6 +33,9 @@ import {
 } from "@/lib/schemas/auth.schema";
 import { createCredit } from "@/lib/api/credits";
 import { createClient } from "@/lib/api/clients";
+import { fetchRoutes } from "@/lib/api/routes";
+import { useQuery } from "@tanstack/react-query";
+import { formatRouteLocation } from "@/lib/constants/route-locations";
 import { btnPrimary, btnSecondary, inputClass } from "@/lib/ui-classes";
 
 const PERSONAL_FIELDS = [
@@ -49,6 +52,7 @@ const PERSONAL_FIELDS = [
   "lat",
   "lng",
   "notes",
+  "routeId",
 ] as const;
 
 type CreateClientTab = "personal" | "credit";
@@ -63,6 +67,11 @@ export function CreateClientModal({
   const [activeTab, setActiveTab] = useState<CreateClientTab>("personal");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const routesQuery = useQuery({
+    queryKey: ["routes-active"],
+    queryFn: () => fetchRoutes({ isActive: true }),
+  });
 
   const form = useForm<CreateClientWithCreditFormValues>({
     resolver: zodResolver(createClientWithCreditSchema),
@@ -114,7 +123,10 @@ export function CreateClientModal({
       const client = await createClient(toCreateClientPayload(values));
       await createCredit(
         client.id,
-        buildCreateCreditPayload(values, currency),
+        buildCreateCreditPayload(
+          { ...values, routeId: values.routeId },
+          currency,
+        ),
       );
       onSuccess(client);
     } catch (err) {
@@ -153,6 +165,39 @@ export function CreateClientModal({
       >
         {activeTab === "personal" ? (
           <>
+            <section>
+              <h3 className="mb-3 text-sm font-semibold text-slate-900">
+                Asignación a ruta
+              </h3>
+              <Field
+                label="Ruta *"
+                error={form.formState.errors.routeId?.message}
+              >
+                <select
+                  className={inputClass}
+                  {...form.register("routeId")}
+                  disabled={routesQuery.isLoading}
+                >
+                  <option value="">
+                    {routesQuery.isLoading
+                      ? "Cargando rutas…"
+                      : "Selecciona una ruta"}
+                  </option>
+                  {(routesQuery.data ?? []).map((route) => (
+                    <option key={route.id} value={route.id}>
+                      {route.name}
+                      {" · "}
+                      {formatRouteLocation(
+                        route.country,
+                        route.department,
+                        route.city,
+                      )}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            </section>
+
             <section>
               <h3 className="mb-3 text-sm font-semibold text-slate-900">
                 Información personal

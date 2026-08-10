@@ -54,6 +54,7 @@ export const createClientSchema = z
     lat: z.coerce.number().optional(),
     lng: z.coerce.number().optional(),
     notes: z.string().optional(),
+    routeId: z.string().uuid("Selecciona una ruta"),
   })
   .superRefine((data, ctx) => {
     if (data.city === OTHER_ROUTE_CITY_VALUE && !data.cityCustom?.trim()) {
@@ -141,6 +142,7 @@ export type CreateClientPayload = Omit<
 > & {
   city: string;
   phone?: string;
+  routeId: string;
 };
 
 export function toCreateClientPayload(

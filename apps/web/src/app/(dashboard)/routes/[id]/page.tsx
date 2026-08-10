@@ -28,7 +28,7 @@ import {
   updateRouteSchema,
 } from "@/lib/schemas/auth.schema";
 import { CollectorSummary } from "@/lib/types/collectors";
-import { formatDate } from "@/lib/utils/format";
+import { formatDate, formatMoney } from "@/lib/utils/format";
 import { collectorSelectLabel } from "@/lib/utils/collector-label";
 import { RouteLocationFields, RouteLocationFieldsValues } from "@/components/route-location-fields";
 import {
@@ -168,6 +168,100 @@ export default function RouteDetailPage() {
 
       {feedback && <Alert variant="success">{feedback}</Alert>}
 
+      <section className="mb-8 rounded-xl border border-slate-200 bg-white p-5">
+        <h2 className="mb-4 font-semibold text-slate-900">
+          Clientes y créditos
+        </h2>
+        {clientsQuery.isLoading ? (
+          <p className="text-sm text-slate-600">Cargando clientes…</p>
+        ) : (clientsQuery.data ?? []).length === 0 ? (
+          <p className="text-sm text-slate-600">
+            Esta ruta no tiene clientes asignados.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-slate-50 text-left text-slate-600">
+                <tr>
+                  <th className="px-3 py-2">#</th>
+                  <th className="px-3 py-2">Cliente</th>
+                  <th className="px-3 py-2">Crédito</th>
+                  <th className="px-3 py-2">Cuota</th>
+                  <th className="px-3 py-2">Pagado</th>
+                  <th className="px-3 py-2">Saldo</th>
+                  <th className="px-3 py-2">Cuotas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {clientsQuery.data?.map((client) => {
+                  const credit = client.activeCredit;
+                  const currency = credit?.currency ?? "COP";
+                  return (
+                    <tr key={client.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-2">{client.sequenceOrder}</td>
+                      <td className="px-3 py-2">
+                        <Link
+                          href={`/clients/${client.id}`}
+                          className="font-medium text-brand-700 hover:underline"
+                        >
+                          {client.fullName}
+                        </Link>
+                        <p className="text-xs text-slate-500">{client.code}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        {credit ? (
+                          <Link
+                            href={`/credits/${credit.id}`}
+                            className="text-brand-600 hover:underline"
+                          >
+                            {formatMoney(credit.principalAmount, currency)}
+                            {credit.interestRate
+                              ? ` · ${credit.interestRate}%`
+                              : ""}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-400">Sin crédito</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {credit
+                          ? formatMoney(credit.installmentAmount, currency)
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        {credit
+                          ? formatMoney(credit.totalPaid, currency)
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2">
+                        {credit ? (
+                          <span
+                            className={
+                              credit.balance > 0
+                                ? "font-medium text-slate-900"
+                                : "text-green-700"
+                            }
+                          >
+                            {formatMoney(credit.balance, currency)}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {credit
+                          ? `${credit.paidInstallments} / ${credit.totalInstallments}`
+                          : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <div className="mb-8 grid gap-6 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-200 bg-white p-5">
           <h2 className="mb-4 font-semibold">Configuración</h2>
@@ -282,7 +376,13 @@ export default function RouteDetailPage() {
                     className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2"
                   >
                     <span>
-                      {index + 1}. {clientMap.get(id)?.fullName ?? id.slice(0, 8)}
+                      {index + 1}.{" "}
+                      <Link
+                        href={`/clients/${id}`}
+                        className="text-brand-700 hover:underline"
+                      >
+                        {clientMap.get(id)?.fullName ?? id.slice(0, 8)}
+                      </Link>
                     </span>
                     <div className="flex gap-1">
                       <button type="button" onClick={() => moveClient(index, -1)} className="px-2">↑</button>

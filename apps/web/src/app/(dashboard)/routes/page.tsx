@@ -121,7 +121,14 @@ export default function RoutesPage() {
             <tbody className="divide-y divide-slate-100">
               {routes.map((route) => (
                 <tr key={route.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium">{route.name}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/routes/${route.id}`}
+                      className="text-brand-700 hover:underline"
+                    >
+                      {route.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     {formatRouteLocation(route.country, route.department, route.city)}
                   </td>

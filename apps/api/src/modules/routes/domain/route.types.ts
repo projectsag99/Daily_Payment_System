@@ -59,4 +59,13 @@ export interface RouteClientRow {
   overdue_installment_count: string | null;
   lat: number | null;
   lng: number | null;
+  credit_id: string | null;
+  credit_principal_amount: string | null;
+  credit_currency: string | null;
+  credit_installment_amount: string | null;
+  credit_total_installments: number | null;
+  credit_interest_rate: string | null;
+  credit_paid_installments: string | null;
+  credit_total_paid: string | null;
+  credit_balance: string | null;
 }

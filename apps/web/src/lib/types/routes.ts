@@ -18,6 +18,18 @@ export interface RouteSummary {
   updatedAt: string;
 }
 
+export interface RouteClientCredit {
+  id: string;
+  principalAmount: number;
+  currency: string;
+  installmentAmount: number;
+  totalInstallments: number;
+  interestRate: number | null;
+  paidInstallments: number;
+  totalPaid: number;
+  balance: number;
+}
+
 export interface RouteClient {
   id: string;
   code: string;
@@ -27,6 +39,7 @@ export interface RouteClient {
   amountDue: number;
   overdueInstallmentCount: number;
   location: GeoPoint | null;
+  activeCredit: RouteClientCredit | null;
 }
 
 export interface CollectorRoute extends RouteSummary {

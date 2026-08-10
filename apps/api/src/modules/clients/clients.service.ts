@@ -175,12 +175,22 @@ export class ClientsService {
       createdById: user.sub,
     });
 
+    const routeExists = await this.clientsRepository.routeExists(dto.routeId);
+    if (!routeExists) {
+      throw new NotFoundException({
+        code: ApiErrorCode.ROUTE_NOT_FOUND,
+        message: "Ruta no encontrada",
+      });
+    }
+
+    await this.clientsRepository.assignClientToRoute(row.id, dto.routeId);
+
     await this.auditService.log({
       actorId: user.sub,
       action: AuditAction.CREATE,
       entityType: "client",
       entityId: row.id,
-      afterState: { code: row.code, status: row.status },
+      afterState: { code: row.code, status: row.status, routeId: dto.routeId },
       ipAddress: ipAddress ?? null,
     });
 
