@@ -13,7 +13,7 @@ export default () => ({
     accessTtlMinutes: Number(process.env.JWT_ACCESS_TTL_MINUTES ?? 15),
     refreshTtlDays: Number(process.env.JWT_REFRESH_TTL_DAYS ?? 7),
   },
-  corsOrigins: process.env.CORS_ORIGINS ?? "http://localhost:3000",
+  corsOrigins: process.env.CORS_ORIGINS ?? "http://localhost:3000,http://127.0.0.1:3000",
   storage: {
     endpoint: process.env.S3_ENDPOINT ?? "http://localhost:9000",
     accessKey: process.env.S3_ACCESS_KEY ?? "minioadmin",

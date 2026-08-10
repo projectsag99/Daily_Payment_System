@@ -42,11 +42,39 @@ async function bootstrap(): Promise<void> {
   );
 
   const corsOrigins = configService
-    .get<string>("corsOrigins", "http://localhost:3000")
+    .get<string>("corsOrigins", "http://localhost:3000,http://127.0.0.1:3000")
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
-  app.enableCors({ origin: corsOrigins, credentials: true });
+  const nodeEnv = configService.get<string>("nodeEnv", "development");
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+      if (corsOrigins.includes(origin)) {
+        callback(null, true);
+        return;
+      }
+      if (
+        nodeEnv !== "production" &&
+        (() => {
+          try {
+            return /\.trycloudflare\.com$/i.test(new URL(origin).hostname);
+          } catch {
+            return false;
+          }
+        })()
+      ) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  });
 
   if (process.env.NODE_ENV !== "production") {
     const swaggerConfig = new DocumentBuilder()

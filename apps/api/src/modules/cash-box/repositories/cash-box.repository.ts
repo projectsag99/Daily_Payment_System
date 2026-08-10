@@ -103,7 +103,7 @@ export class CashBoxRepository {
     private readonly dataSource: DataSource,
     configService: ConfigService,
   ) {
-    this.timezone = configService.get<string>("timezone", "America/Montevideo");
+    this.timezone = configService.get<string>("timezone", "America/Bogota");
   }
 
   private paymentBusinessDate(column: string): string {
