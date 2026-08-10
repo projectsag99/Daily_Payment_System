@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/api-base-url";
+
 export interface ApiErrorBody {
   statusCode?: number;
   code?: string;
@@ -29,43 +31,26 @@ export function isNetworkError(error: unknown): boolean {
   return false;
 }
 
-function useDevProxy(): boolean {
-  return process.env.NEXT_PUBLIC_API_PROXY !== "false";
-}
-
-export function getApiBaseUrl(): string {
-  const serverFallback = "http://127.0.0.1:3001/v1";
-
-  if (typeof window !== "undefined" && useDevProxy()) {
-    return `${window.location.origin}/v1`;
-  }
-
-  const fallback = "http://localhost:3001";
-  const raw = (process.env.NEXT_PUBLIC_API_URL ?? fallback).trim();
-
-  if (!raw || raw === "/") {
-    return typeof window === "undefined" ? serverFallback : `${window.location.origin}/v1`;
-  }
-
-  const base = raw.replace(/\/+$/, "");
-  const withVersion = base.endsWith("/v1") ? base : `${base}/v1`;
-
-  if (!/^https?:\/\//i.test(withVersion)) {
-    return typeof window === "undefined" ? serverFallback : `${window.location.origin}/v1`;
-  }
-
-  return withVersion;
-}
-
 export async function apiFetch<T>(
   path: string,
-  options: RequestInit & { token?: string } = {},
+  options: RequestInit & {
+    token?: string;
+    skipAuthRetry?: boolean;
+    _authRetried?: boolean;
+  } = {},
 ): Promise<T> {
-  const { token, headers: initHeaders, ...init } = options;
+  const { token, skipAuthRetry, _authRetried, headers: initHeaders, ...init } = options;
   const headers = new Headers(initHeaders);
   headers.set("Content-Type", "application/json");
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+
+  let authToken = token;
+  if (authToken && !skipAuthRetry && !_authRetried) {
+    const { ensureValidAccessToken } = await import("@/lib/auth/token-refresh");
+    authToken = (await ensureValidAccessToken()) ?? authToken;
+  }
+
+  if (authToken) {
+    headers.set("Authorization", `Bearer ${authToken}`);
   }
 
   let response: Response;
@@ -82,6 +67,27 @@ export async function apiFetch<T>(
 
   const body = (await response.json().catch(() => ({}))) as T & ApiErrorBody;
 
+  if (
+    !response.ok &&
+    response.status === 401 &&
+    authToken &&
+    !skipAuthRetry &&
+    !_authRetried &&
+    !path.startsWith("/auth/login") &&
+    !path.startsWith("/auth/refresh") &&
+    !path.startsWith("/auth/register")
+  ) {
+    const { refreshAccessToken } = await import("@/lib/auth/token-refresh");
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      return apiFetch<T>(path, {
+        ...options,
+        token: newToken,
+        _authRetried: true,
+      });
+    }
+  }
+
   if (!response.ok) {
     throw new ApiError(
       response.status,
@@ -92,3 +98,5 @@ export async function apiFetch<T>(
 
   return body;
 }
+
+export { getApiBaseUrl } from "@/lib/api-base-url";
