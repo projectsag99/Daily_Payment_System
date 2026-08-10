@@ -112,8 +112,6 @@ export function toCreateRoutePayload(
 export const updateRouteSchema = z
   .object({
     name: z.string().min(1).max(100).optional(),
-    shift: z.enum(SHIFT_TYPES).optional(),
-    dayOfWeek: z.coerce.number().min(0).max(6).nullable().optional(),
     isActive: z.boolean().optional(),
     description: z.string().nullable().optional(),
     country: z

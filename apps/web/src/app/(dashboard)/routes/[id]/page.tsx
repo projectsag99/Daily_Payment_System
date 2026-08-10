@@ -21,11 +21,6 @@ import {
   updateRoute,
 } from "@/lib/api/routes";
 import {
-  DAY_LABELS,
-  SHIFT_LABELS,
-  SHIFT_TYPES,
-} from "@/lib/constants";
-import {
   AssignCollectorFormValues,
   UpdateRouteFormValues,
   assignCollectorSchema,
@@ -125,8 +120,6 @@ export default function RouteDetailPage() {
     values: route
       ? {
           name: route.name,
-          shift: route.shift,
-          dayOfWeek: route.dayOfWeek,
           isActive: route.isActive,
           description: route.description ?? "",
           ...routeFormLocationValues(route),
@@ -201,23 +194,6 @@ export default function RouteDetailPage() {
               inputClass={inputClass}
               requireAll={false}
             />
-            <div>
-              <label className="mb-1 block text-sm font-medium">Turno</label>
-              <select className={inputClass} {...form.register("shift")}>
-                {SHIFT_TYPES.map((s) => (
-                  <option key={s} value={s}>{SHIFT_LABELS[s]}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium">Día</label>
-              <select className={inputClass} {...form.register("dayOfWeek")}>
-                <option value="">Todos</option>
-                {DAY_LABELS.map((label, i) => (
-                  <option key={label} value={i}>{label}</option>
-                ))}
-              </select>
-            </div>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" {...form.register("isActive")} />
               Ruta activa
