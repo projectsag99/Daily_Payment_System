@@ -34,6 +34,12 @@ import {
 import { CollectorSummary } from "@/lib/types/collectors";
 import { formatDate } from "@/lib/utils/format";
 import { collectorSelectLabel } from "@/lib/utils/collector-label";
+import {
+  ROUTE_COUNTRIES,
+  ROUTE_CITIES_BY_COUNTRY,
+  RouteCountryCode,
+  formatRouteLocation,
+} from "@/lib/constants/route-locations";
 
 export default function RouteDetailPage() {
   const params = useParams<{ id: string }>();
@@ -116,6 +122,8 @@ export default function RouteDetailPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<UpdateRouteFormValues>({
     resolver: zodResolver(updateRouteSchema),
@@ -126,9 +134,28 @@ export default function RouteDetailPage() {
           dayOfWeek: route.dayOfWeek,
           isActive: route.isActive,
           description: route.description ?? "",
+          country: (route.country as RouteCountryCode | null) ?? undefined,
+          city: route.city ?? "",
         }
       : undefined,
   });
+
+  const selectedCountry = watch("country") as RouteCountryCode | undefined;
+  const selectedCity = watch("city");
+  const cities = selectedCountry ? ROUTE_CITIES_BY_COUNTRY[selectedCountry] : [];
+
+  useEffect(() => {
+    if (!selectedCountry) {
+      if (selectedCity) setValue("city", "");
+      return;
+    }
+    if (
+      selectedCity &&
+      !ROUTE_CITIES_BY_COUNTRY[selectedCountry].includes(selectedCity)
+    ) {
+      setValue("city", "");
+    }
+  }, [selectedCountry, selectedCity, setValue]);
 
   if (routesQuery.isLoading) {
     return <p className="text-sm text-slate-600">Cargando ruta…</p>;
@@ -165,8 +192,7 @@ export default function RouteDetailPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-semibold text-slate-900">{route.name}</h1>
         <p className="text-sm text-slate-600">
-          {SHIFT_LABELS[route.shift]}
-          {route.dayOfWeek !== null ? ` · ${DAY_LABELS[route.dayOfWeek]}` : ""}
+          {formatRouteLocation(route.country, route.city)}
         </p>
       </div>
 
@@ -177,6 +203,42 @@ export default function RouteDetailPage() {
           <h2 className="mb-4 font-semibold">Configuración</h2>
           <form onSubmit={handleSubmit((v) => updateMutation.mutate(v))} className="space-y-3">
             <Input label="Nombre" error={errors.name?.message} {...register("name")} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium">País</label>
+                <select className={inputClass} {...register("country")}>
+                  <option value="">Seleccionar…</option>
+                  {ROUTE_COUNTRIES.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.country && (
+                  <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
+                )}
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Ciudad</label>
+                <select
+                  className={inputClass}
+                  {...register("city")}
+                  disabled={!selectedCountry}
+                >
+                  <option value="">
+                    {selectedCountry ? "Seleccionar…" : "Elige un país"}
+                  </option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+                {errors.city && (
+                  <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+                )}
+              </div>
+            </div>
             <div>
               <label className="mb-1 block text-sm font-medium">Turno</label>
               <select className={inputClass} {...register("shift")}>

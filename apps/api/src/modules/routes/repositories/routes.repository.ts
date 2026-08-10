@@ -59,6 +59,8 @@ export class RoutesRepository {
         r.day_of_week,
         r.is_active,
         r.description,
+        r.country,
+        r.city,
         r.created_at,
         r.updated_at,
         COUNT(DISTINCT rca.client_id)::text AS client_count,
@@ -109,12 +111,16 @@ export class RoutesRepository {
     shift: ShiftType;
     dayOfWeek?: number | null;
     description?: string;
+    country: string;
+    city: string;
   }): Promise<Route> {
     const route = this.routeRepository.create({
       name: data.name,
       shift: data.shift,
       dayOfWeek: data.dayOfWeek ?? null,
       description: data.description ?? null,
+      country: data.country,
+      city: data.city,
       isActive: true,
     });
     return this.routeRepository.save(route);
@@ -128,6 +134,8 @@ export class RoutesRepository {
       dayOfWeek: number | null;
       isActive: boolean;
       description: string | null;
+      country: string;
+      city: string;
     }>,
   ): Promise<Route | null> {
     await this.routeRepository.update(routeId, data);
@@ -176,6 +184,8 @@ export class RoutesRepository {
         r.day_of_week,
         r.is_active,
         r.description,
+        r.country,
+        r.city,
         r.created_at,
         r.updated_at,
         COUNT(DISTINCT rca.client_id)::text AS client_count,

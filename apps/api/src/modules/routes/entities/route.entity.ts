@@ -28,6 +28,12 @@ export class Route {
   @Column({ type: "text", nullable: true })
   description!: string | null;
 
+  @Column({ type: "varchar", length: 2, nullable: true })
+  country!: string | null;
+
+  @Column({ type: "varchar", length: 100, nullable: true })
+  city!: string | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

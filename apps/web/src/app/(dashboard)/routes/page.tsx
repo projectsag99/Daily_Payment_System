@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Alert } from "@/components/ui/alert";
@@ -11,16 +11,21 @@ import { ApiError } from "@/lib/api-client";
 import { fetchAssignableCollectors } from "@/lib/api/collectors";
 import { createRoute, fetchRoutes } from "@/lib/api/routes";
 import {
-  DAY_LABELS,
   SHIFT_LABELS,
   SHIFT_TYPES,
   ShiftType,
 } from "@/lib/constants";
+import { collectorSelectLabel } from "@/lib/utils/collector-label";
 import {
   CreateRouteFormValues,
   createRouteSchema,
 } from "@/lib/schemas/auth.schema";
-import { collectorSelectLabel } from "@/lib/utils/collector-label";
+import {
+  ROUTE_COUNTRIES,
+  ROUTE_CITIES_BY_COUNTRY,
+  RouteCountryCode,
+  formatRouteLocation,
+} from "@/lib/constants/route-locations";
 
 export default function RoutesPage() {
   const queryClient = useQueryClient();
@@ -108,8 +113,7 @@ export default function RoutesPage() {
             <thead className="bg-slate-50 text-left text-slate-600">
               <tr>
                 <th className="px-4 py-3 font-medium">Nombre</th>
-                <th className="px-4 py-3 font-medium">Turno</th>
-                <th className="px-4 py-3 font-medium">Día</th>
+                <th className="px-4 py-3 font-medium">Ubicación</th>
                 <th className="px-4 py-3 font-medium">Clientes</th>
                 <th className="px-4 py-3 font-medium">Cobrador</th>
                 <th className="px-4 py-3 font-medium">Estado</th>
@@ -120,11 +124,8 @@ export default function RoutesPage() {
               {routes.map((route) => (
                 <tr key={route.id} className="hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium">{route.name}</td>
-                  <td className="px-4 py-3">{SHIFT_LABELS[route.shift]}</td>
                   <td className="px-4 py-3">
-                    {route.dayOfWeek !== null
-                      ? DAY_LABELS[route.dayOfWeek]
-                      : "Todos"}
+                    {formatRouteLocation(route.country, route.city)}
                   </td>
                   <td className="px-4 py-3">{route.clientCount}</td>
                   <td className="px-4 py-3">
@@ -180,9 +181,16 @@ function CreateRouteModal({
     queryFn: fetchAssignableCollectors,
   });
 
-  const { register, handleSubmit, formState: { errors } } = useForm<CreateRouteFormValues>({
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateRouteFormValues>({
     resolver: zodResolver(createRouteSchema),
   });
+
+  const selectedCountry = watch("country") as RouteCountryCode | undefined;
+  const cities = selectedCountry ? ROUTE_CITIES_BY_COUNTRY[selectedCountry] : [];
+
+  useEffect(() => {
+    setValue("city", "");
+  }, [selectedCountry, setValue]);
 
   const collectors = collectorsQuery.data ?? [];
   const pendingCount = collectors.filter((c) => c.status === "pending").length;
@@ -194,6 +202,45 @@ function CreateRouteModal({
           <label className="mb-1 block text-sm font-medium">Nombre *</label>
           <input className={inputClass} {...register("name")} />
           {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-sm font-medium">País *</label>
+            <select className={inputClass} defaultValue="" {...register("country")}>
+              <option value="" disabled>
+                Seleccionar país…
+              </option>
+              {ROUTE_COUNTRIES.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+            {errors.country && (
+              <p className="mt-1 text-sm text-red-600">{errors.country.message}</p>
+            )}
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">Ciudad *</label>
+            <select
+              className={inputClass}
+              defaultValue=""
+              {...register("city")}
+              disabled={!selectedCountry}
+            >
+              <option value="" disabled>
+                {selectedCountry ? "Seleccionar ciudad…" : "Primero elige un país"}
+              </option>
+              {cities.map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+            {errors.city && (
+              <p className="mt-1 text-sm text-red-600">{errors.city.message}</p>
+            )}
+          </div>
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Cobrador responsable</label>

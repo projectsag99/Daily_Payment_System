@@ -37,6 +37,8 @@ export interface RouteSummaryRow {
   day_of_week: number | null;
   is_active: boolean;
   description: string | null;
+  country: string | null;
+  city: string | null;
   client_count: string;
   collector_id: string | null;
   collector_name: string | null;

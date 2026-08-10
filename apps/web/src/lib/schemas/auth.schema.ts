@@ -5,6 +5,11 @@ import {
   RULE_TYPES,
   SHIFT_TYPES,
 } from "@/lib/constants";
+import {
+  ROUTE_CITIES_BY_COUNTRY,
+  ROUTE_COUNTRY_CODES,
+  RouteCountryCode,
+} from "@/lib/constants/route-locations";
 
 export const loginSchema = z.object({
   email: z.string().email("Correo inválido"),
@@ -63,24 +68,60 @@ export const updateClientSchema = z.object({
 
 export type UpdateClientFormValues = z.infer<typeof updateClientSchema>;
 
-export const createRouteSchema = z.object({
-  name: z.string().min(1, "El nombre es obligatorio").max(100),
-  description: z.string().optional(),
-  collectorId: z
-    .union([z.literal(""), z.string().uuid("Selecciona un cobrador válido")])
-    .optional()
-    .transform((v) => (v === "" || v === undefined ? undefined : v)),
-});
+export const createRouteSchema = z
+  .object({
+    name: z.string().min(1, "El nombre es obligatorio").max(100),
+    country: z.enum(ROUTE_COUNTRY_CODES, {
+      errorMap: () => ({ message: "Selecciona un país" }),
+    }),
+    city: z.string().min(1, "Selecciona una ciudad").max(100),
+    description: z.string().optional(),
+    collectorId: z
+      .union([z.literal(""), z.string().uuid("Selecciona un cobrador válido")])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  })
+  .superRefine((data, ctx) => {
+    const cities = ROUTE_CITIES_BY_COUNTRY[data.country as RouteCountryCode];
+    if (!cities.includes(data.city)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ciudad no válida para el país seleccionado",
+        path: ["city"],
+      });
+    }
+  });
 
 export type CreateRouteFormValues = z.infer<typeof createRouteSchema>;
 
-export const updateRouteSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  shift: z.enum(SHIFT_TYPES).optional(),
-  dayOfWeek: z.coerce.number().min(0).max(6).nullable().optional(),
-  isActive: z.boolean().optional(),
-  description: z.string().nullable().optional(),
-});
+export const updateRouteSchema = z
+  .object({
+    name: z.string().min(1).max(100).optional(),
+    shift: z.enum(SHIFT_TYPES).optional(),
+    dayOfWeek: z.coerce.number().min(0).max(6).nullable().optional(),
+    isActive: z.boolean().optional(),
+    description: z.string().nullable().optional(),
+    country: z
+      .union([z.literal(""), z.enum(ROUTE_COUNTRY_CODES)])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+    city: z
+      .union([z.literal(""), z.string().min(1).max(100)])
+      .optional()
+      .transform((v) => (v === "" || v === undefined ? undefined : v)),
+  })
+  .superRefine((data, ctx) => {
+    if (data.country && data.city) {
+      const cities = ROUTE_CITIES_BY_COUNTRY[data.country as RouteCountryCode];
+      if (!cities.includes(data.city)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ciudad no válida para el país seleccionado",
+          path: ["city"],
+        });
+      }
+    }
+  });
 
 export type UpdateRouteFormValues = z.infer<typeof updateRouteSchema>;
 

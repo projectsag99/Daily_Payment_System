@@ -3,10 +3,12 @@ import {
   IsBoolean,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
   IsUUID,
+  Length,
   Max,
   MaxLength,
   Min,
@@ -14,12 +16,24 @@ import {
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { ShiftType } from "../../../common/constants";
+import { ROUTE_COUNTRY_CODES } from "../domain/route-locations";
 
 export class CreateRouteDto {
   @ApiProperty({ example: "Ruta Centro" })
   @IsString()
   @MaxLength(100)
   name!: string;
+
+  @ApiProperty({ example: "CO", description: "ISO 3166-1 alpha-2 country code" })
+  @IsString()
+  @Length(2, 2)
+  @IsIn(ROUTE_COUNTRY_CODES)
+  country!: string;
+
+  @ApiProperty({ example: "Bogotá" })
+  @IsString()
+  @MaxLength(100)
+  city!: string;
 
   @ApiPropertyOptional({ enum: ShiftType, default: ShiftType.MORNING })
   @IsOptional()
@@ -74,6 +88,19 @@ export class UpdateRouteDto {
   @IsOptional()
   @IsString()
   description?: string | null;
+
+  @ApiPropertyOptional({ example: "CO" })
+  @IsOptional()
+  @IsString()
+  @Length(2, 2)
+  @IsIn(ROUTE_COUNTRY_CODES)
+  country?: string;
+
+  @ApiPropertyOptional({ example: "Bogotá" })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
 }
 
 export class ListRoutesQueryDto {

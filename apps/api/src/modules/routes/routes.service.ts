@@ -29,6 +29,10 @@ import {
   mapRouteSummary,
   mapRouteWithClients,
 } from "./domain/route.mapper";
+import {
+  isValidRouteCity,
+  isValidRouteCountryCode,
+} from "./domain/route-locations";
 
 @Injectable()
 export class RoutesService {
@@ -98,14 +102,32 @@ export class RoutesService {
     return rows.map(mapRouteSummary);
   }
 
+  private assertValidRouteLocation(country: string, city: string): void {
+    if (!isValidRouteCountryCode(country)) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "País no válido",
+      });
+    }
+    if (!isValidRouteCity(country, city)) {
+      throw new BadRequestException({
+        code: ApiErrorCode.VALIDATION_ERROR,
+        message: "Ciudad no válida para el país seleccionado",
+      });
+    }
+  }
+
   async create(user: JwtPayload, dto: CreateRouteDto, ipAddress?: string) {
     this.assertAdmin(user);
+    this.assertValidRouteLocation(dto.country, dto.city);
 
     const route = await this.routesRepository.createRoute({
       name: dto.name,
       shift: dto.shift ?? ShiftType.MORNING,
       dayOfWeek: dto.dayOfWeek ?? null,
       description: dto.description,
+      country: dto.country,
+      city: dto.city,
     });
 
     await this.auditService.log({
@@ -113,7 +135,12 @@ export class RoutesService {
       action: AuditAction.CREATE,
       entityType: "route",
       entityId: route.id,
-      afterState: { name: route.name, shift: route.shift },
+      afterState: {
+        name: route.name,
+        shift: route.shift,
+        country: route.country,
+        city: route.city,
+      },
       ipAddress: ipAddress ?? null,
     });
 
@@ -142,6 +169,8 @@ export class RoutesService {
       day_of_week: route.dayOfWeek,
       is_active: route.isActive,
       description: route.description,
+      country: route.country,
+      city: route.city,
       client_count: "0",
       collector_id: null,
       collector_name: null,
@@ -160,12 +189,26 @@ export class RoutesService {
     this.assertAdmin(user);
     const before = await this.assertRouteExists(routeId);
 
+    if (dto.country !== undefined || dto.city !== undefined) {
+      const country = dto.country ?? before.country;
+      const city = dto.city ?? before.city;
+      if (!country || !city) {
+        throw new BadRequestException({
+          code: ApiErrorCode.VALIDATION_ERROR,
+          message: "País y ciudad son obligatorios",
+        });
+      }
+      this.assertValidRouteLocation(country, city);
+    }
+
     const patch: Parameters<RoutesRepository["updateRoute"]>[1] = {};
     if (dto.name !== undefined) patch.name = dto.name;
     if (dto.shift !== undefined) patch.shift = dto.shift;
     if (dto.dayOfWeek !== undefined) patch.dayOfWeek = dto.dayOfWeek;
     if (dto.isActive !== undefined) patch.isActive = dto.isActive;
     if (dto.description !== undefined) patch.description = dto.description;
+    if (dto.country !== undefined) patch.country = dto.country;
+    if (dto.city !== undefined) patch.city = dto.city;
 
     const updated = await this.routesRepository.updateRoute(routeId, patch);
 

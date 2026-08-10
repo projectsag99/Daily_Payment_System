@@ -8,6 +8,8 @@ export function mapRouteSummary(row: RouteSummaryRow) {
     dayOfWeek: row.day_of_week,
     isActive: row.is_active,
     description: row.description,
+    country: row.country,
+    city: row.city,
     clientCount: Number(row.client_count ?? 0),
     assignedCollector: row.collector_id
       ? { id: row.collector_id, name: row.collector_name }

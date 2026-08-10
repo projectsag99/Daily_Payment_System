@@ -8,6 +8,8 @@ export interface RouteSummary {
   dayOfWeek: number | null;
   isActive: boolean;
   description: string | null;
+  country: string | null;
+  city: string | null;
   clientCount: number;
   assignedCollector: { id: string; name: string } | null;
   collectedTodayPct: number | null;
