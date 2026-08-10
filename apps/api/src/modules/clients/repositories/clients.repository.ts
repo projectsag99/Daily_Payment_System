@@ -208,9 +208,7 @@ export class ClientsRepository {
     return { rows, total };
   }
 
-  async findById(clientId: string): Promise<ClientRow | null> {
-    const rows = await this.dataSource.query(
-      `SELECT
+  private clientSelectSql = `
         c.id,
         c.code,
         c.first_name,
@@ -228,12 +226,23 @@ export class ClientsRepository {
         c.notes,
         c.created_by,
         c.created_at,
-        c.updated_at
+        c.updated_at`;
+
+  private async queryClientById(
+    runner: Pick<DataSource, "query">,
+    clientId: string,
+  ): Promise<ClientRow | null> {
+    const rows = await runner.query(
+      `SELECT ${this.clientSelectSql}
       FROM clients c
       WHERE c.id = $1 AND c.deleted_at IS NULL`,
       [clientId],
     );
     return rows[0] ?? null;
+  }
+
+  async findById(clientId: string): Promise<ClientRow | null> {
+    return this.queryClientById(this.dataSource, clientId);
   }
 
   async createClient(data: {
@@ -274,7 +283,7 @@ export class ClientsRepository {
 
       let locationSql = "NULL";
       if (data.location) {
-        locationSql = `ST_SetSRID(ST_MakePoint($14, $15), 4326)::geography`;
+        locationSql = `ST_SetSRID(ST_MakePoint($13, $14), 4326)::geography`;
         params.push(data.location.lng, data.location.lat);
       }
 
@@ -287,8 +296,11 @@ export class ClientsRepository {
         params,
       );
 
-      const created = await this.findById(rows[0].id as string);
-      return created!;
+      const created = await this.queryClientById(manager, rows[0].id as string);
+      if (!created) {
+        throw new Error("Failed to load created client");
+      }
+      return created;
     });
   }
 

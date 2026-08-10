@@ -18,17 +18,19 @@ export class AddClientCountryDepartmentAndCodeSeq1722000000026
       CREATE SEQUENCE IF NOT EXISTS client_code_seq START WITH 1
     `);
     await queryRunner.query(`
-      SELECT setval(
-        'client_code_seq',
-        COALESCE(
-          (
-            SELECT MAX(CAST(SUBSTRING(code FROM 5) AS INTEGER))
-            FROM clients
-            WHERE code ~ '^CLI-[0-9]+$'
-          ),
-          0
-        )
-      )
+      DO $$
+      DECLARE
+        max_code INTEGER;
+      BEGIN
+        SELECT MAX(CAST(SUBSTRING(code FROM 5) AS INTEGER))
+        INTO max_code
+        FROM clients
+        WHERE code ~ '^CLI-[0-9]+$';
+
+        IF max_code IS NOT NULL AND max_code > 0 THEN
+          PERFORM setval('client_code_seq', max_code);
+        END IF;
+      END $$;
     `);
   }
 
